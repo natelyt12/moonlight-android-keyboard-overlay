@@ -1,11 +1,16 @@
 package com.limelight.preferences;
 
+import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.media.MediaCodecInfo;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.app.Activity;
@@ -20,22 +25,32 @@ import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.util.DisplayMetrics;
 import android.util.Range;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.DisplayCutout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import com.limelight.LimeLog;
 import com.limelight.PcView;
 import com.limelight.R;
+import com.limelight.binding.input.virtual_keyboard.VirtualKey;
+import com.limelight.binding.input.virtual_keyboard.VirtualKeyboardProfileManager;
 import com.limelight.binding.video.MediaCodecHelper;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.UiHelper;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 
 public class StreamSettings extends Activity {
     private PreferenceConfiguration previousPrefs;
@@ -118,6 +133,15 @@ public class StreamSettings extends Activity {
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent, null);
             }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        android.app.Fragment fragment = getFragmentManager().findFragmentById(R.id.stream_settings);
+        if (fragment != null) {
+            fragment.onActivityResult(requestCode, resultCode, data);
         }
     }
 
@@ -277,11 +301,22 @@ public class StreamSettings extends Activity {
             addPreferencesFromResource(R.xml.preferences);
             PreferenceScreen screen = getPreferenceScreen();
 
-            // hide on-screen controls category on non touch screen devices
+            // hide keyboard layer category on non touch screen devices
             if (!getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
-                PreferenceCategory category =
-                        (PreferenceCategory) findPreference("category_onscreen_controls");
-                screen.removePreference(category);
+                PreferenceCategory kbCategory =
+                        (PreferenceCategory) findPreference("category_keyboard_layer");
+                if (kbCategory != null) screen.removePreference(kbCategory);
+            }
+
+            Preference editKeyboardLayoutPref = findPreference("pref_edit_keyboard_layout");
+            if (editKeyboardLayoutPref != null) {
+                editKeyboardLayoutPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        startActivity(new Intent(getActivity(), com.limelight.binding.input.virtual_keyboard.ManageKeyboardLayoutsActivity.class));
+                        return true;
+                    }
+                });
             }
 
             // Hide remote desktop mouse mode on pre-Oreo (which doesn't have pointer capture)
@@ -291,30 +326,6 @@ public class StreamSettings extends Activity {
                 PreferenceCategory category =
                         (PreferenceCategory) findPreference("category_input_settings");
                 category.removePreference(findPreference("checkbox_absolute_mouse_mode"));
-            }
-
-            // Hide gamepad motion sensor option when running on OSes before Android 12.
-            // Support for motion, LED, battery, and other extensions were introduced in S.
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                PreferenceCategory category =
-                        (PreferenceCategory) findPreference("category_gamepad_settings");
-                category.removePreference(findPreference("checkbox_gamepad_motion_sensors"));
-            }
-
-            // Hide gamepad motion sensor fallback option if the device has no gyro or accelerometer
-            if (!getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER) &&
-                    !getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE)) {
-                PreferenceCategory category =
-                        (PreferenceCategory) findPreference("category_gamepad_settings");
-                category.removePreference(findPreference("checkbox_gamepad_motion_fallback"));
-            }
-
-            // Hide USB driver options on devices without USB host support
-            if (!getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST)) {
-                PreferenceCategory category =
-                        (PreferenceCategory) findPreference("category_gamepad_settings");
-                category.removePreference(findPreference("checkbox_usb_bind_all"));
-                category.removePreference(findPreference("checkbox_usb_driver"));
             }
 
             // Remove PiP mode on devices pre-Oreo, where the feature is not available (some low RAM devices),
@@ -327,28 +338,15 @@ public class StreamSettings extends Activity {
                 category.removePreference(findPreference("checkbox_enable_pip"));
             }
 
-            // Fire TV apps are not allowed to use WebViews or browsers, so hide the Help category
-            /*if (getActivity().getPackageManager().hasSystemFeature("amazon.hardware.fire_tv")) {
-                PreferenceCategory category =
-                        (PreferenceCategory) findPreference("category_help");
-                screen.removePreference(category);
-            }*/
-            PreferenceCategory category_gamepad_settings =
-                    (PreferenceCategory) findPreference("category_gamepad_settings");
-            // Remove the vibration options if the device can't vibrate
+            // Remove keyboard layer vibration option if the device can't vibrate
             if (!((Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE)).hasVibrator()) {
-                category_gamepad_settings.removePreference(findPreference("checkbox_vibrate_fallback"));
-                category_gamepad_settings.removePreference(findPreference("seekbar_vibrate_fallback_strength"));
-                // The entire OSC category may have already been removed by the touchscreen check above
-                PreferenceCategory category = (PreferenceCategory) findPreference("category_onscreen_controls");
-                if (category != null) {
-                    category.removePreference(findPreference("checkbox_vibrate_osc"));
+                PreferenceCategory kbCategory = (PreferenceCategory) findPreference("category_keyboard_layer");
+                if (kbCategory != null) {
+                    Preference vibPref = findPreference("checkbox_vibrate_keyboard_overlay");
+                    if (vibPref != null) kbCategory.removePreference(vibPref);
+                    Preference durPref = findPreference("seekbar_vibrate_keyboard_duration");
+                    if (durPref != null) kbCategory.removePreference(durPref);
                 }
-            }
-            else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
-                    !((Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE)).hasAmplitudeControl() ) {
-                // Remove the vibration strength selector of the device doesn't have amplitude control
-                category_gamepad_settings.removePreference(findPreference("seekbar_vibrate_fallback_strength"));
             }
 
             Display display = getActivity().getWindowManager().getDefaultDisplay();

@@ -1,0 +1,185 @@
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Dim backdrop (tap outside to close) -->
+    <View
+        android:id="@+id/stream_menu_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#44000000" />
+
+    <!-- Sidebar Container -->
+    <ScrollView
+        android:id="@+id/stream_menu_sidebar"
+        android:layout_width="310dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="#F2141517"
+        android:padding="16dp"
+        android:elevation="14dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/vk_stream_menu"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btn_menu_close_x"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp"
+                    android:text="@string/vk_close"
+                    android:textColor="#888888"
+                    android:textSize="13sp"
+                    android:clickable="true" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/label_menu_session_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="12dp"
+                android:text="@string/vk_quick_controls"
+                android:textColor="#666666"
+                android:textSize="11sp" />
+
+            <!-- SECTION: APPEARANCE -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/vk_section_appearance"
+                android:textColor="#00B4D8"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/label_menu_layout_opacity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="Layout opacity: 100%"
+                android:textColor="#DDDDDD"
+                android:textSize="12sp" />
+
+            <SeekBar
+                android:id="@+id/seekbar_menu_layout_opacity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="14dp"
+                android:max="100"
+                android:progress="100" />
+
+            <TextView
+                android:id="@+id/label_menu_mouse_sensitivity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="Mouse Sensitivity: 100%"
+                android:textColor="#DDDDDD"
+                android:textSize="12sp" />
+
+            <SeekBar
+                android:id="@+id/seekbar_menu_mouse_sensitivity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="14dp"
+                android:max="500"
+                android:progress="100" />
+
+            <CheckBox
+                android:id="@+id/checkbox_menu_touchscreen_trackpad"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/vk_use_touchscreen_as_trackpad"
+                android:textColor="#DDDDDD"
+                android:textSize="12sp" />
+
+            <!-- SECTION: KEYBOARD LAYOUTS -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/vk_section_keyboard_layout"
+                android:textColor="#00B4D8"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Direct item selector container -->
+            <LinearLayout
+                android:id="@+id/container_menu_layouts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#22FFFFFF"
+                android:layout_marginBottom="12dp" />
+
+            <!-- SECTION 3: SESSION ACTIONS -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/vk_section_session_actions"
+                android:textColor="#E63946"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <Button
+                android:id="@+id/btn_menu_disconnect"
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:layout_marginBottom="6dp"
+                android:backgroundTint="#2D3139"
+                android:textColor="#FF6B6B"
+                android:textSize="12sp"
+                android:text="@string/vk_disconnect_title" />
+
+            <Button
+                android:id="@+id/btn_menu_quit_game"
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:layout_marginBottom="14dp"
+                android:backgroundTint="#C1121F"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:text="@string/vk_quit_game_stream" />
+
+            <!-- Close Button -->
+            <Button
+                android:id="@+id/btn_menu_close_bottom"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:backgroundTint="#1F2126"
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:text="@string/vk_close_menu" />
+
+        </LinearLayout>
+    </ScrollView>
+</merge>

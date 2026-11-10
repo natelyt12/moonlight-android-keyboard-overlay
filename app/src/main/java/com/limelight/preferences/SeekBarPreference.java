@@ -59,12 +59,37 @@ public class SeekBarPreference extends DialogPreference
         }
 
         // Get default, min, and max seekbar values
-        defaultValue = attrs.getAttributeIntValue(ANDROID_SCHEMA_URL, "defaultValue", PreferenceConfiguration.getDefaultBitrate(context));
+        int defVal = attrs.getAttributeIntValue(ANDROID_SCHEMA_URL, "defaultValue", Integer.MIN_VALUE);
+        if (defVal == Integer.MIN_VALUE) {
+            String defValStr = attrs.getAttributeValue(ANDROID_SCHEMA_URL, "defaultValue");
+            if (defValStr != null) {
+                try {
+                    defVal = Integer.parseInt(defValStr);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        if (defVal == Integer.MIN_VALUE) {
+            defVal = PreferenceConfiguration.getDefaultBitrate(context);
+        }
+        defaultValue = defVal;
         maxValue = attrs.getAttributeIntValue(ANDROID_SCHEMA_URL, "max", 100);
         minValue = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "min", 1);
         stepSize = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "step", 1);
         divisor = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "divisor", 1);
         keyStepSize = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "keyStep", 0);
+    }
+
+    private void updateValueText(int value) {
+        if (valueText == null) return;
+        int roundedValue = ((value + (stepSize - 1)) / stepSize) * stepSize;
+        String t;
+        if (divisor != 1) {
+            float floatValue = roundedValue / (float) divisor;
+            t = String.format((Locale) null, "%.1f", floatValue);
+        } else {
+            t = String.valueOf(roundedValue);
+        }
+        valueText.setText(suffix == null ? t : t.concat(suffix.length() > 1 ? " " + suffix : suffix));
     }
 
     @Override
@@ -85,8 +110,6 @@ public class SeekBarPreference extends DialogPreference
         valueText = new TextView(context);
         valueText.setGravity(Gravity.CENTER_HORIZONTAL);
         valueText.setTextSize(32);
-        // Default text for value; hides bug where OnSeekBarChangeListener isn't called when opacity is 0%
-        valueText.setText("0%");
         params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -107,15 +130,7 @@ public class SeekBarPreference extends DialogPreference
                     return;
                 }
 
-                String t;
-                if (divisor != 1) {
-                    float floatValue = roundedValue / (float)divisor;
-                    t = String.format((Locale)null, "%.1f", floatValue);
-                }
-                else {
-                    t = String.valueOf(value);
-                }
-                valueText.setText(suffix == null ? t : t.concat(suffix.length() > 1 ? " "+suffix : suffix));
+                updateValueText(roundedValue);
             }
 
             @Override
@@ -136,6 +151,7 @@ public class SeekBarPreference extends DialogPreference
             seekBar.setKeyProgressIncrement(keyStepSize);
         }
         seekBar.setProgress(currentValue);
+        updateValueText(currentValue);
 
         return layout;
     }
@@ -148,6 +164,12 @@ public class SeekBarPreference extends DialogPreference
             seekBar.setKeyProgressIncrement(keyStepSize);
         }
         seekBar.setProgress(currentValue);
+        updateValueText(currentValue);
+    }
+
+    @Override
+    protected Object onGetDefaultValue(android.content.res.TypedArray a, int index) {
+        return a.getInt(index, defaultValue);
     }
 
     @Override
@@ -155,10 +177,23 @@ public class SeekBarPreference extends DialogPreference
     {
         super.onSetInitialValue(restore, defaultValue);
         if (restore) {
-            currentValue = shouldPersist() ? getPersistedInt(this.defaultValue) : 0;
+            currentValue = shouldPersist() ? getPersistedInt(this.defaultValue) : this.defaultValue;
         }
         else {
-            currentValue = (Integer) defaultValue;
+            if (defaultValue instanceof Integer) {
+                currentValue = (Integer) defaultValue;
+            } else if (defaultValue instanceof String) {
+                try {
+                    currentValue = Integer.parseInt((String) defaultValue);
+                } catch (NumberFormatException e) {
+                    currentValue = this.defaultValue;
+                }
+            } else {
+                currentValue = this.defaultValue;
+            }
+            if (shouldPersist()) {
+                persistInt(currentValue);
+            }
         }
     }
 

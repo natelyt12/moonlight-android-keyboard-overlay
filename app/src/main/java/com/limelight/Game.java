@@ -3,16 +3,14 @@ package com.limelight;
 
 import com.limelight.binding.PlatformBinding;
 import com.limelight.binding.audio.AndroidAudioRenderer;
-import com.limelight.binding.input.ControllerHandler;
 import com.limelight.binding.input.KeyboardTranslator;
 import com.limelight.binding.input.capture.InputCaptureManager;
 import com.limelight.binding.input.capture.InputCaptureProvider;
 import com.limelight.binding.input.touch.AbsoluteTouchContext;
 import com.limelight.binding.input.touch.RelativeTouchContext;
-import com.limelight.binding.input.driver.UsbDriverService;
 import com.limelight.binding.input.evdev.EvdevListener;
 import com.limelight.binding.input.touch.TouchContext;
-import com.limelight.binding.input.virtual_controller.VirtualController;
+import com.limelight.binding.input.virtual_keyboard.VirtualKeyboardController;
 import com.limelight.binding.video.CrashListener;
 import com.limelight.binding.video.MediaCodecDecoderRenderer;
 import com.limelight.binding.video.MediaCodecHelper;
@@ -23,7 +21,6 @@ import com.limelight.nvstream.StreamConfiguration;
 import com.limelight.nvstream.http.ComputerDetails;
 import com.limelight.nvstream.http.NvApp;
 import com.limelight.nvstream.http.NvHTTP;
-import com.limelight.nvstream.input.ControllerPacket;
 import com.limelight.nvstream.input.KeyboardPacket;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
@@ -91,7 +88,7 @@ import java.util.Locale;
 public class Game extends Activity implements SurfaceHolder.Callback,
         OnGenericMotionListener, OnTouchListener, NvConnectionListener, EvdevListener,
         OnSystemUiVisibilityChangeListener, GameGestures, StreamView.InputCallbacks,
-        PerfOverlayListener, UsbDriverService.UsbDriverStateListener, View.OnKeyListener {
+        PerfOverlayListener, View.OnKeyListener {
     private int lastButtonState = 0;
 
     // Only 2 touches are supported
@@ -109,9 +106,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     private static final int THREE_FINGER_TAP_THRESHOLD = 300;
 
-    private ControllerHandler controllerHandler;
     private KeyboardTranslator keyboardTranslator;
-    private VirtualController virtualController;
+    private VirtualKeyboardController virtualKeyboardController;
 
     private PreferenceConfiguration prefConfig;
     private SharedPreferences tombstonePrefs;
@@ -152,23 +148,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     private WifiManager.WifiLock highPerfWifiLock;
     private WifiManager.WifiLock lowLatencyWifiLock;
-
-    private boolean connectedToUsbDriverService = false;
-    private ServiceConnection usbDriverServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            UsbDriverService.UsbDriverBinder binder = (UsbDriverService.UsbDriverBinder) iBinder;
-            binder.setListener(controllerHandler);
-            binder.setStateListener(Game.this);
-            binder.start();
-            connectedToUsbDriverService = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            connectedToUsbDriverService = false;
-        }
-    };
 
     public static final String EXTRA_HOST = "Host";
     public static final String EXTRA_PORT = "Port";
@@ -424,18 +403,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             }
         }
 
-        int gamepadMask = ControllerHandler.getAttachedControllerMask(this);
-        if (!prefConfig.multiController) {
-            // Always set gamepad 1 present for when multi-controller is
-            // disabled for games that don't properly support detection
-            // of gamepads removed and replugged at runtime.
-            gamepadMask = 1;
-        }
-        if (prefConfig.onscreenController) {
-            // If we're using OSC, always set at least gamepad 1.
-            gamepadMask |= 1;
-        }
-
         // Set to the optimal mode for streaming
         float displayRefreshRate = prepareDisplayForRendering();
         LimeLog.info("Display refresh rate: "+displayRefreshRate);
@@ -473,12 +440,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 .setMaxPacketSize(1392)
                 .setRemoteConfiguration(StreamConfiguration.STREAM_CFG_AUTO) // NvConnection will perform LAN and VPN detection
                 .setSupportedVideoFormats(supportedVideoFormats)
-                .setAttachedGamepadMask(gamepadMask)
+                .setAttachedGamepadMask(0)
                 .setClientRefreshRateX100((int)(displayRefreshRate * 100))
                 .setAudioConfiguration(prefConfig.audioConfiguration)
                 .setColorSpace(decoderRenderer.getPreferredColorSpace())
                 .setColorRange(decoderRenderer.getPreferredColorRange())
-                .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
+                .setPersistGamepadsAfterDisconnect(false)
                 .build();
 
         // Initialize the connection
@@ -486,7 +453,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 new ComputerDetails.AddressTuple(host, port),
                 httpsPort, uniqueId, config,
                 PlatformBinding.getCryptoProvider(this), serverCert);
-        controllerHandler = new ControllerHandler(this, conn, this, prefConfig);
         keyboardTranslator = new KeyboardTranslator();
 
         InputManager inputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
@@ -504,20 +470,19 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             }
         }
 
-        if (prefConfig.onscreenController) {
-            // create virtual onscreen controller
-            virtualController = new VirtualController(controllerHandler,
+
+        if (prefConfig.keyboardOverlay) {
+            // create virtual keyboard controller
+            virtualKeyboardController = new VirtualKeyboardController(conn, keyboardTranslator,
                     (FrameLayout)streamView.getParent(),
                     this);
-            virtualController.refreshLayout();
-            virtualController.show();
+            virtualKeyboardController.setOpacity(prefConfig.oscOpacity);
+            virtualKeyboardController.setVibrationEnabled(prefConfig.keyboardOverlayVibrate);
+            virtualKeyboardController.setVibrationDuration(prefConfig.keyboardOverlayVibrateDuration);
+            virtualKeyboardController.refreshLayout();
+            virtualKeyboardController.show();
         }
 
-        if (prefConfig.usbDriver) {
-            // Start the USB driver
-            bindService(new Intent(this, UsbDriverService.class),
-                    usbDriverServiceConnection, Service.BIND_AUTO_CREATE);
-        }
 
         if (!decoderRenderer.isAvcSupported()) {
             if (spinner != null) {
@@ -541,11 +506,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // For semi-square displays, we use more complex logic to determine which orientation to use (if any)
         if (PreferenceConfiguration.isSquarishScreen(display)) {
             int desiredOrientation = Configuration.ORIENTATION_UNDEFINED;
-
-            // OSC doesn't properly support portrait displays, so don't use it in portrait mode by default
-            if (prefConfig.onscreenController) {
-                desiredOrientation = Configuration.ORIENTATION_LANDSCAPE;
-            }
 
             // For native resolution, we will lock the orientation to the one that matches the specified resolution
             if (PreferenceConfiguration.isNativeResolution(prefConfig.width, prefConfig.height)) {
@@ -581,9 +541,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // Set requested orientation for possible new screen size
         setPreferredOrientationForCurrentDisplay();
 
-        if (virtualController != null) {
-            // Refresh layout of OSC for possible new screen size
-            virtualController.refreshLayout();
+        if (virtualKeyboardController != null) {
+            virtualKeyboardController.refreshLayout();
         }
 
         // Hide on-screen overlays in PiP mode
@@ -591,15 +550,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             if (isInPictureInPictureMode()) {
                 isHidingOverlays = true;
 
-                if (virtualController != null) {
-                    virtualController.hide();
+                if (virtualKeyboardController != null) {
+                    virtualKeyboardController.hide();
                 }
 
                 performanceOverlayView.setVisibility(View.GONE);
                 notificationOverlayView.setVisibility(View.GONE);
-
-                // Disable sensors while in PiP mode
-                controllerHandler.disableSensors();
 
                 // Update GameManager state to indicate we're in PiP (still gaming, but interruptible)
                 UiHelper.notifyStreamEnteringPiP(this);
@@ -609,8 +565,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
                 // Restore overlays to previous state when leaving PiP
 
-                if (virtualController != null) {
-                    virtualController.show();
+                if (virtualKeyboardController != null) {
+                    virtualKeyboardController.show();
                 }
 
                 if (prefConfig.enablePerfOverlay) {
@@ -618,9 +574,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 }
 
                 notificationOverlayView.setVisibility(requestedNotificationOverlayVisibility);
-
-                // Enable sensors again after exiting PiP
-                controllerHandler.enableSensors();
 
                 // Update GameManager state to indicate we're out of PiP (gaming, non-interruptible)
                 UiHelper.notifyStreamExitingPiP(this);
@@ -1036,9 +989,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     protected void onDestroy() {
         super.onDestroy();
 
-        if (controllerHandler != null) {
-            controllerHandler.destroy();
-        }
         if (keyboardTranslator != null) {
             InputManager inputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
             inputManager.unregisterInputDeviceListener(keyboardTranslator);
@@ -1051,11 +1001,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             highPerfWifiLock.release();
         }
 
-        if (connectedToUsbDriverService) {
-            // Unbind from the discovery service
-            unbindService(usbDriverServiceConnection);
-        }
-
         // Destroy the capture provider
         inputCaptureProvider.destroy();
     }
@@ -1063,11 +1008,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     protected void onPause() {
         if (isFinishing()) {
-            // Stop any further input device notifications before we lose focus (and pointer capture)
-            if (controllerHandler != null) {
-                controllerHandler.stop();
-            }
-
             // Ungrab input to prevent further input device notifications
             setInputGrabState(false);
         }
@@ -1082,8 +1022,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         SpinnerDialog.closeDialogs(this);
         Dialog.closeDialogs();
 
-        if (virtualController != null) {
-            virtualController.hide();
+        if (virtualKeyboardController != null) {
+            virtualKeyboardController.hide();
         }
 
         if (conn != null) {
@@ -1351,18 +1291,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             return true;
         }
 
-        boolean handled = false;
-
-        if (ControllerHandler.isGameControllerDevice(event.getDevice())) {
-            // Always try the controller handler first, unless it's an alphanumeric keyboard device.
-            // Otherwise, controller handler will eat keyboard d-pad events.
-            handled = controllerHandler.handleButtonDown(event);
-        }
-
-        // Try the keyboard handler if it wasn't handled as a game controller
-        if (!handled) {
-            // Let this method take duplicate key down events
-            if (handleSpecialKeys(event.getKeyCode(), true)) {
+        // Let this method take duplicate key down events
+        if (handleSpecialKeys(event.getKeyCode(), true)) {
                 return true;
             }
 
@@ -1396,7 +1326,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
             conn.sendKeyboardInput(translated, KeyboardPacket.KEY_DOWN, getModifierState(event),
                     keyboardTranslator.hasNormalizedMapping(event.getKeyCode(), event.getDeviceId()) ? 0 : MoonBridge.SS_KBE_FLAG_NON_NORMALIZED);
-        }
 
         return true;
     }
@@ -1432,35 +1361,25 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             return true;
         }
 
-        boolean handled = false;
-        if (ControllerHandler.isGameControllerDevice(event.getDevice())) {
-            // Always try the controller handler first, unless it's an alphanumeric keyboard device.
-            // Otherwise, controller handler will eat keyboard d-pad events.
-            handled = controllerHandler.handleButtonUp(event);
+        if (handleSpecialKeys(event.getKeyCode(), false)) {
+            return true;
         }
 
-        // Try the keyboard handler if it wasn't handled as a game controller
-        if (!handled) {
-            if (handleSpecialKeys(event.getKeyCode(), false)) {
-                return true;
-            }
-
-            // Pass through keyboard input if we're not grabbing
-            if (!grabbedInput) {
-                return false;
-            }
-
-            short translated = keyboardTranslator.translate(event.getKeyCode(), event.getDeviceId());
-            if (translated == 0) {
-                // If we sent this event as UTF-8 on key down, also report that it was handled
-                // when we get the key up event for it.
-                int unicodeChar = event.getUnicodeChar();
-                return (unicodeChar & KeyCharacterMap.COMBINING_ACCENT) == 0 && (unicodeChar & KeyCharacterMap.COMBINING_ACCENT_MASK) != 0;
-            }
-
-            conn.sendKeyboardInput(translated, KeyboardPacket.KEY_UP, getModifierState(event),
-                    keyboardTranslator.hasNormalizedMapping(event.getKeyCode(), event.getDeviceId()) ? 0 : MoonBridge.SS_KBE_FLAG_NON_NORMALIZED);
+        // Pass through keyboard input if we're not grabbing
+        if (!grabbedInput) {
+            return false;
         }
+
+        short translated = keyboardTranslator.translate(event.getKeyCode(), event.getDeviceId());
+        if (translated == 0) {
+            // If we sent this event as UTF-8 on key down, also report that it was handled
+            // when we get the key up event for it.
+            int unicodeChar = event.getUnicodeChar();
+            return (unicodeChar & KeyCharacterMap.COMBINING_ACCENT) == 0 && (unicodeChar & KeyCharacterMap.COMBINING_ACCENT_MASK) != 0;
+        }
+
+        conn.sendKeyboardInput(translated, KeyboardPacket.KEY_UP, getModifierState(event),
+                keyboardTranslator.hasNormalizedMapping(event.getKeyCode(), event.getDeviceId()) ? 0 : MoonBridge.SS_KBE_FLAG_NON_NORMALIZED);
 
         return true;
     }
@@ -1502,6 +1421,106 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         LimeLog.info("Toggling keyboard overlay");
         InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         inputManager.toggleSoftInput(0, 0);
+    }
+
+    public void toggleInStreamMenu() {
+        LimeLog.info("Toggling in-stream sidebar menu");
+        if (virtualKeyboardController != null) {
+            virtualKeyboardController.toggleInStreamMenu();
+        }
+    }
+
+    public int getMouseSensitivity() {
+        return prefConfig != null ? prefConfig.mouseSensitivity : 100;
+    }
+
+    public void setMouseSensitivity(int sensitivity) {
+        if (prefConfig != null) {
+            prefConfig.mouseSensitivity = sensitivity;
+        }
+        android.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                .edit()
+                .putInt("seekbar_mouse_sensitivity", sensitivity)
+                .apply();
+    }
+
+    public boolean isTouchscreenTrackpad() {
+        return prefConfig != null && prefConfig.touchscreenTrackpad;
+    }
+
+    public void setTouchscreenTrackpad(boolean enabled) {
+        if (prefConfig != null) {
+            prefConfig.touchscreenTrackpad = enabled;
+        }
+        android.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                .edit()
+                .putBoolean("checkbox_touchscreen_trackpad", enabled)
+                .apply();
+
+        // Rebuild the touch contexts so the new input mode takes effect immediately
+        for (int i = 0; i < touchContextMap.length; i++) {
+            if (touchContextMap[i] != null) {
+                touchContextMap[i].cancelTouch();
+            }
+            if (enabled) {
+                touchContextMap[i] = new RelativeTouchContext(conn, i,
+                        REFERENCE_HORIZ_RES, REFERENCE_VERT_RES,
+                        streamView, prefConfig);
+            }
+            else {
+                touchContextMap[i] = new AbsoluteTouchContext(conn, i, streamView);
+            }
+        }
+    }
+
+    public void disconnectStream() {
+        LimeLog.info("Disconnecting stream session from in-stream menu");
+        finish();
+    }
+
+    public void quitGameAndDisconnect() {
+        LimeLog.info("Force quitting game and disconnecting from in-stream menu");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String host = getIntent().getStringExtra(EXTRA_HOST);
+                    int httpsPort = getIntent().getIntExtra(EXTRA_HTTPS_PORT, 0);
+                    String uniqueId = getIntent().getStringExtra(EXTRA_UNIQUEID);
+                    byte[] derCertData = getIntent().getByteArrayExtra(EXTRA_SERVER_CERT);
+                    java.security.cert.X509Certificate serverCert = null;
+                    if (derCertData != null) {
+                        serverCert = (java.security.cert.X509Certificate) java.security.cert.CertificateFactory.getInstance("X.509")
+                                .generateCertificate(new java.io.ByteArrayInputStream(derCertData));
+                    }
+                    if (host != null && uniqueId != null) {
+                        int port = getIntent().getIntExtra(EXTRA_PORT, com.limelight.nvstream.http.NvHTTP.DEFAULT_HTTP_PORT);
+                        com.limelight.nvstream.http.ComputerDetails.AddressTuple addr =
+                                new com.limelight.nvstream.http.ComputerDetails.AddressTuple(host, port);
+                        com.limelight.nvstream.http.NvHTTP http = new com.limelight.nvstream.http.NvHTTP(
+                                addr, httpsPort, uniqueId, serverCert, com.limelight.binding.PlatformBinding.getCryptoProvider(Game.this));
+                        http.quitApp();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        finish();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (virtualKeyboardController != null && virtualKeyboardController.isMenuOpen()) {
+            virtualKeyboardController.toggleInStreamMenu();
+            return;
+        }
+        super.onBackPressed();
     }
 
     private byte getLiTouchTypeFromEvent(MotionEvent event) {
@@ -1791,11 +1810,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         int eventSource = event.getSource();
         int deviceSources = event.getDevice() != null ? event.getDevice().getSources() : 0;
         if ((eventSource & InputDevice.SOURCE_CLASS_JOYSTICK) != 0) {
-            if (controllerHandler.handleMotionEvent(event)) {
-                return true;
-            }
-        }
-        else if ((deviceSources & InputDevice.SOURCE_CLASS_JOYSTICK) != 0 && controllerHandler.tryHandleTouchpadEvent(event)) {
+            // Ignore external physical gamepads
             return true;
         }
         else if ((eventSource & InputDevice.SOURCE_CLASS_POINTER) != 0 ||
@@ -1848,6 +1863,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     // Send the deltas straight from the motion event
                     short deltaX = (short)inputCaptureProvider.getRelativeAxisX(event);
                     short deltaY = (short)inputCaptureProvider.getRelativeAxisY(event);
+
+                    if (prefConfig != null) {
+                        double sensitivityScale = PreferenceConfiguration.getMouseSensitivityScale(prefConfig.mouseSensitivity);
+                        deltaX = (short) Math.round(deltaX * sensitivityScale);
+                        deltaY = (short) Math.round(deltaY * sensitivityScale);
+                    }
 
                     if (deltaX != 0 || deltaY != 0) {
                         if (prefConfig.absoluteMouseMode) {
@@ -1993,10 +2014,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             // This case is for fingers
             else
             {
-                if (virtualController != null &&
-                        (virtualController.getControllerMode() == VirtualController.ControllerMode.MoveButtons ||
-                         virtualController.getControllerMode() == VirtualController.ControllerMode.ResizeButtons)) {
-                    // Ignore presses when the virtual controller is being configured
+
+
+                if (virtualKeyboardController != null &&
+                        virtualKeyboardController.handleSlideTouchEvent(view != null ? view : streamView, event)) {
                     return true;
                 }
 
@@ -2032,14 +2053,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     return true;
                 }
 
-                // TODO: Re-enable native touch when have a better solution for handling
-                // cancelled touches from Android gestures and 3 finger taps to activate
-                // the software keyboard.
-                /*if (!prefConfig.touchscreenTrackpad && trySendTouchEvent(view, event)) {
-                    // If this host supports touch events and absolute touch is enabled,
-                    // send it directly as a touch event.
+                if (!prefConfig.touchscreenTrackpad && trySendTouchEvent(view, event)) {
+                    // Send native multi-touch events directly to the Windows host
                     return true;
-                }*/
+                }
 
                 TouchContext context = getTouchContext(actionIndex);
                 if (context == null) {
@@ -2230,8 +2247,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             connecting = connected = false;
             updatePipAutoEnter();
 
-            controllerHandler.stop();
-
             // Update GameManager state to indicate we're no longer in game
             UiHelper.notifyStreamEnded(this);
 
@@ -2300,9 +2315,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             public void run() {
                 // Let the display go to sleep now
                 getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-                // Stop processing controller input
-                controllerHandler.stop();
 
                 // Ungrab input
                 setInputGrabState(false);
@@ -2474,16 +2486,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void rumble(short controllerNumber, short lowFreqMotor, short highFreqMotor) {
-        LimeLog.info(String.format((Locale)null, "Rumble on gamepad %d: %04x %04x", controllerNumber, lowFreqMotor, highFreqMotor));
-
-        controllerHandler.handleRumble(controllerNumber, lowFreqMotor, highFreqMotor);
     }
 
     @Override
     public void rumbleTriggers(short controllerNumber, short leftTrigger, short rightTrigger) {
-        LimeLog.info(String.format((Locale)null, "Rumble on gamepad triggers %d: %04x %04x", controllerNumber, leftTrigger, rightTrigger));
-
-        controllerHandler.handleRumbleTriggers(controllerNumber, leftTrigger, rightTrigger);
     }
 
     @Override
@@ -2494,12 +2500,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void setMotionEventState(short controllerNumber, byte motionType, short reportRateHz) {
-        controllerHandler.handleSetMotionEventState(controllerNumber, motionType, reportRateHz);
     }
 
     @Override
     public void setControllerLED(short controllerNumber, byte r, byte g, byte b) {
-        controllerHandler.handleSetControllerLED(controllerNumber, r, g, b);
     }
 
     @Override
@@ -2668,20 +2672,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 performanceOverlayView.setText(text);
             }
         });
-    }
-
-    @Override
-    public void onUsbPermissionPromptStarting() {
-        // Disable PiP auto-enter while the USB permission prompt is on-screen. This prevents
-        // us from entering PiP while the user is interacting with the OS permission dialog.
-        suppressPipRefCount++;
-        updatePipAutoEnter();
-    }
-
-    @Override
-    public void onUsbPermissionPromptCompleted() {
-        suppressPipRefCount--;
-        updatePipAutoEnter();
     }
 
     @Override

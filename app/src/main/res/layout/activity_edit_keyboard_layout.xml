@@ -1,0 +1,764 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/editor_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#2B2D31">
+
+    <!-- Background Image: FIT CENTER -->
+    <ImageView
+        android:id="@+id/editor_bg_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:contentDescription="@null" />
+
+    <!-- Container for draggable keyboard buttons -->
+    <FrameLayout
+        android:id="@+id/editor_keys_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Center-Right Floating Menu Button (Compact, No emoji) -->
+    <LinearLayout
+        android:id="@+id/btn_open_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|end"
+        android:orientation="horizontal"
+        android:background="#E01C1E22"
+        android:paddingStart="10dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="12dp"
+        android:clickable="true"
+        android:focusable="false">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/vk_menu"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Compact Sidebar (Slide-in from right) -->
+    <ScrollView
+        android:id="@+id/editor_sidebar"
+        android:layout_width="310dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="#F2141517"
+        android:padding="16dp"
+        android:visibility="gone"
+        android:clickable="true"
+        android:elevation="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- MODE A: GLOBAL MENU -->
+            <LinearLayout
+                android:id="@+id/panel_global_menu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/vk_layout_menu"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btn_close_sidebar_global"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="6dp"
+                        android:text="@string/vk_close"
+                        android:textColor="#888888"
+                        android:textSize="13sp"
+                        android:clickable="true" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="@string/vk_editor_hint"
+                    android:textColor="#777777"
+                    android:textSize="11sp" />
+
+                <Button
+                    android:id="@+id/btn_add_key"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:layout_marginBottom="6dp"
+                    android:backgroundTint="#00B4D8"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_add_button" />
+
+                <Button
+                    android:id="@+id/btn_add_controller"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#7209B7"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_add_controller" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#22FFFFFF"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vk_preview_background"
+                    android:textColor="#AAAAAA"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="6dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <Button
+                        android:id="@+id/btn_pick_bg"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="4dp"
+                        android:backgroundTint="#2D3035"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textAllCaps="false"
+                        android:text="@string/vk_pick_image" />
+
+                    <Button
+                        android:id="@+id/btn_clear_bg"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="4dp"
+                        android:backgroundTint="#2D3035"
+                        android:textColor="#CCCCCC"
+                        android:textSize="11sp"
+                        android:textAllCaps="false"
+                        android:text="@string/vk_clear_image" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/text_bg_opacity_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Background Opacity: 100%"
+                    android:textColor="#888888"
+                    android:textSize="11sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_bg_opacity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="100"
+                    android:progress="100"
+                    android:layout_marginBottom="10dp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#22FFFFFF"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="10dp" />
+
+
+
+                <Button
+                    android:id="@+id/btn_save_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:layout_marginBottom="6dp"
+                    android:backgroundTint="#00B4D8"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_save_layout" />
+
+                <Button
+                    android:id="@+id/btn_reset_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:layout_marginBottom="6dp"
+                    android:backgroundTint="#D90429"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_reset_default" />
+
+                <Button
+                    android:id="@+id/btn_exit_editor"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:layout_marginBottom="6dp"
+                    android:backgroundTint="#2D3035"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_exit" />
+
+                <Button
+                    android:id="@+id/btn_close_menu_bottom"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:backgroundTint="#1F2124"
+                    android:textColor="#AAAAAA"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_close_menu" />
+
+            </LinearLayout>
+
+
+            <!-- MODE B: BUTTON INSPECTOR -->
+            <LinearLayout
+                android:id="@+id/panel_button_inspector"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/inspector_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/vk_button_settings"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btn_close_inspector"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="6dp"
+                        android:text="@string/vk_close"
+                        android:textColor="#888888"
+                        android:textSize="13sp"
+                        android:clickable="true" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#22FFFFFF"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="10dp" />
+
+                <!-- Label & Key Code -->
+                <LinearLayout
+                    android:id="@+id/layout_key_label_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_button_label"
+                        android:textColor="#AAAAAA"
+                        android:textSize="11sp" />
+
+                    <EditText
+                        android:id="@+id/edit_key_label"
+                        android:layout_width="match_parent"
+                        android:layout_height="38dp"
+                        android:background="#2D3035"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:singleLine="true"
+                        android:layout_marginBottom="8dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/label_key_mapping"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vk_key_assignment"
+                    android:textColor="#AAAAAA"
+                    android:textSize="11sp"
+                    android:layout_marginBottom="4dp" />
+
+                <Button
+                    android:id="@+id/btn_change_keycode"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:backgroundTint="#3A3D44"
+                    android:textColor="#00B4D8"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    tools:text="Key 1 (Main): KEY_W"
+                    android:layout_marginBottom="4dp" />
+
+                <LinearLayout
+                    android:id="@+id/layout_combo_keys"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <Button
+                        android:id="@+id/btn_change_extra_key1"
+                        android:layout_width="match_parent"
+                        android:layout_height="34dp"
+                        android:layout_marginBottom="4dp"
+                        android:backgroundTint="#2D3035"
+                        android:textColor="#CCCCCC"
+                        android:textSize="11sp"
+                        android:textAllCaps="false"
+                        tools:text="Combo Key 2: [None]" />
+
+                    <Button
+                        android:id="@+id/btn_change_extra_key2"
+                        android:layout_width="match_parent"
+                        android:layout_height="34dp"
+                        android:layout_marginBottom="4dp"
+                        android:backgroundTint="#2D3035"
+                        android:textColor="#CCCCCC"
+                        android:textSize="11sp"
+                        android:textAllCaps="false"
+                        tools:text="Combo Key 3: [None]" />
+
+                    <Button
+                        android:id="@+id/btn_change_extra_key3"
+                        android:layout_width="match_parent"
+                        android:layout_height="34dp"
+                        android:layout_marginBottom="4dp"
+                        android:backgroundTint="#2D3035"
+                        android:textColor="#CCCCCC"
+                        android:textSize="11sp"
+                        android:textAllCaps="false"
+                        tools:text="Combo Key 4: [None]" />
+                </LinearLayout>
+
+                <!-- Controller / Joystick 4-Directional Key Mappings -->
+                <LinearLayout
+                    android:id="@+id/layout_controller_mapping"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_directional_mapping"
+                        android:textColor="#AAAAAA"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="4dp" />
+
+                    <!-- Up Key -->
+                    <Button
+                        android:id="@+id/btn_key_up"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:layout_marginBottom="4dp"
+                        android:backgroundTint="#2D3035"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textAllCaps="false"
+                        tools:text="Up (▲): W" />
+
+                    <!-- Left & Right Keys -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="4dp">
+
+                        <Button
+                            android:id="@+id/btn_key_left"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="4dp"
+                            android:backgroundTint="#2D3035"
+                            android:textColor="#FFFFFF"
+                            android:textSize="11sp"
+                            android:textAllCaps="false"
+                            tools:text="Left (◀): A" />
+
+                        <Button
+                            android:id="@+id/btn_key_right"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="36dp"
+                            android:layout_marginStart="4dp"
+                            android:backgroundTint="#2D3035"
+                            android:textColor="#FFFFFF"
+                            android:textSize="11sp"
+                            android:textAllCaps="false"
+                            tools:text="Right (▶): D" />
+                    </LinearLayout>
+
+                    <!-- Down Key -->
+                    <Button
+                        android:id="@+id/btn_key_down"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:layout_marginBottom="4dp"
+                        android:backgroundTint="#2D3035"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textAllCaps="false"
+                        tools:text="Down (▼): S" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_diagonal_hint"
+                        android:textColor="#777777"
+                        android:textSize="10sp"
+                        android:layout_marginBottom="8dp" />
+                </LinearLayout>
+
+                <!-- Position X & Y -->
+                <TextView
+                    android:id="@+id/label_key_pos_x"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Position X: 0%"
+                    android:textColor="#888888"
+                    android:textSize="11sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_key_pos_x"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:id="@+id/label_key_pos_y"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Position Y: 0%"
+                    android:textColor="#888888"
+                    android:textSize="11sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_key_pos_y"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Width & Height -->
+                <TextView
+                    android:id="@+id/label_key_width"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Width:"
+                    android:textColor="#888888"
+                    android:textSize="11sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_key_width"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:id="@+id/label_key_height"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Height:"
+                    android:textColor="#888888"
+                    android:textSize="11sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_key_height"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Corner Radius -->
+                <TextView
+                    android:id="@+id/label_key_radius"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Corner Radius: 0dp"
+                    android:textColor="#888888"
+                    android:textSize="11sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_key_radius"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="35"
+                    android:progress="0"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Background Opacity -->
+                <TextView
+                    android:id="@+id/label_key_bg_opacity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Background Opacity: 45%"
+                    android:textColor="#888888"
+                    android:textSize="11sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_key_bg_opacity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="100"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Text Opacity -->
+                <TextView
+                    android:id="@+id/label_key_text_opacity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Text Opacity: 100%"
+                    android:textColor="#888888"
+                    android:textSize="11sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_key_text_opacity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="100"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Toggles (Level-1 Options) -->
+                <LinearLayout
+                    android:id="@+id/layout_container_border"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/checkbox_key_border"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_show_border"
+                        android:tooltipText="Display visual border outline around the key"
+                        android:textColor="#CCCCCC"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/hint_key_border"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="26dp"
+                        android:layout_marginBottom="6dp"
+                        android:text="@string/vk_show_border_desc"
+                        android:textColor="#777777"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layout_container_slide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/checkbox_key_slide"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_slide_mode"
+                        android:tooltipText="Trigger key press when sliding or swiping finger into it"
+                        android:textColor="#CCCCCC"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/hint_key_slide"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="26dp"
+                        android:layout_marginBottom="6dp"
+                        android:text="@string/vk_slide_mode_desc"
+                        android:textColor="#777777"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layout_container_hold_outside"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/checkbox_key_hold_outside"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_hold_outside"
+                        android:tooltipText="Do not release key when finger moves outside the button boundary"
+                        android:textColor="#CCCCCC"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/hint_key_hold_outside"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="26dp"
+                        android:layout_marginBottom="6dp"
+                        android:text="@string/vk_hold_outside_desc"
+                        android:textColor="#777777"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layout_container_absorb_touch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/checkbox_key_absorb_touch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_absorb_touch"
+                        android:tooltipText="Absorb touches to prevent stream mouse and camera movement"
+                        android:textColor="#CCCCCC"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/hint_key_absorb_touch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="26dp"
+                        android:layout_marginBottom="6dp"
+                        android:text="@string/vk_absorb_touch_desc"
+                        android:textColor="#777777"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layout_container_block_touch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/checkbox_key_block_touch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_block_touch"
+                        android:tooltipText="Absorb all touches in this zone without sending any input"
+                        android:textColor="#CCCCCC"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/hint_key_block_touch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="26dp"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/vk_block_touch_desc"
+                        android:textColor="#777777"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <!-- Toggle Keys Overlay action: optional input mode switching -->
+                <LinearLayout
+                    android:id="@+id/layout_container_switch_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <CheckBox
+                        android:id="@+id/checkbox_key_switch_input"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vk_switch_input_on_toggle"
+                        android:tooltipText="Switch to touchscreen input when the overlay is hidden"
+                        android:textColor="#CCCCCC"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/hint_key_switch_input"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="26dp"
+                        android:layout_marginBottom="6dp"
+                        android:text="@string/vk_switch_input_on_toggle_desc"
+                        android:textColor="#777777"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <!-- Actions -->
+                <Button
+                    android:id="@+id/btn_duplicate_key"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:layout_marginBottom="6dp"
+                    android:backgroundTint="#4361EE"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_duplicate_button" />
+
+                <Button
+                    android:id="@+id/btn_delete_key"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#D90429"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_delete_button" />
+
+                <Button
+                    android:id="@+id/btn_done_inspector"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:backgroundTint="#00B4D8"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:text="@string/vk_done" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</FrameLayout>

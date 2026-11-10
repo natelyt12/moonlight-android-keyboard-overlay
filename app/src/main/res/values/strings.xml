@@ -196,15 +196,37 @@
 
     <string name="category_input_settings">Input Settings</string>
     <string name="title_checkbox_touchscreen_trackpad">Use the touchscreen as a trackpad</string>
-    <string name="summary_checkbox_touchscreen_trackpad">If enabled, the touchscreen acts like a trackpad. If disabled, the touchscreen directly controls the mouse cursor.</string>
+    <string name="summary_checkbox_touchscreen_trackpad">Enabled: Acts like a laptop trackpad (drag finger to move mouse cursor).\nDisabled: Direct Windows touchscreen mode (supports multi-touch, pinch-to-zoom, and touch gestures).</string>
     <string name="title_checkbox_absolute_mouse_mode">Remote desktop mouse mode</string>
     <string name="summary_checkbox_absolute_mouse_mode">This can make mouse acceleration behave more naturally for remote desktop usage, but it is incompatible with many games.</string>
     <string name="title_checkbox_mouse_nav_buttons">Enable back and forward mouse buttons</string>
     <string name="summary_checkbox_mouse_nav_buttons">Enabling this option may break right clicking on some buggy devices</string>
+    <string name="title_seekbar_mouse_sensitivity">Mouse sensitivity</string>
+    <string name="summary_seekbar_mouse_sensitivity">Adjust mouse cursor speed for touch trackpad and mouse input</string>
+    <string name="suffix_seekbar_mouse_sensitivity">%</string>
+    <string name="title_seekbar_scroll_speed">Scroll speed</string>
+    <string name="summary_seekbar_scroll_speed">Adjust mouse wheel scroll velocity for two-finger touch and virtual mouse</string>
+    <string name="suffix_seekbar_scroll_speed">x</string>
 
     <string name="category_on_screen_controls_settings">On-screen Controls Settings</string>
     <string name="title_checkbox_show_onscreen_controls">Show on-screen controls</string>
     <string name="summary_checkbox_show_onscreen_controls">Show virtual controller overlay on touchscreen</string>
+    <string name="category_keyboard_layer_settings">Keyboard Layer</string>
+    <string name="title_checkbox_show_keyboard_overlay">Show keyboard overlay</string>
+    <string name="summary_checkbox_show_keyboard_overlay">Show Pojav-style on-screen keyboard controls on touchscreen</string>
+    <string name="title_edit_keyboard_layout">Manage keyboard layouts</string>
+    <string name="summary_edit_keyboard_layout">Create, edit, switch, import/export custom layouts</string>
+    <string name="title_export_keyboard_layout">Export keyboard layout</string>
+    <string name="summary_export_keyboard_layout">Save current layout to a JSON file</string>
+    <string name="title_import_keyboard_layout">Import keyboard layout</string>
+    <string name="summary_import_keyboard_layout">Load layout from a JSON file</string>
+    <string name="title_checkbox_vibrate_keyboard_overlay">Vibrate on key press</string>
+    <string name="summary_checkbox_vibrate_keyboard_overlay">Vibrate device when touching virtual keyboard buttons</string>
+    <string name="title_seekbar_keyboard_opacity">Virtual keyboard opacity</string>
+    <string name="summary_seekbar_keyboard_opacity">Adjust transparency of virtual on-screen keys</string>
+    <string name="title_seekbar_vibrate_duration">Vibration duration</string>
+    <string name="summary_seekbar_vibrate_duration">Adjust haptic feedback duration on key press</string>
+    <string name="suffix_ms"> ms</string>
     <string name="title_checkbox_vibrate_osc">Enable vibration</string>
     <string name="summary_checkbox_vibrate_osc">Vibrates your device to emulate rumble for the on-screen controls</string>
     <string name="title_only_l3r3">Only show L3 and R3</string>
@@ -303,4 +325,185 @@
     <string name="analogscroll_none">None (both sticks move the mouse)</string>
     <string name="analogscroll_right">Right analog stick</string>
     <string name="analogscroll_left">Left analog stick</string>
+
+    <!-- ======================================================================
+         Virtual keyboard overlay: shared
+         ====================================================================== -->
+    <string name="vk_cancel">Cancel</string>
+    <string name="vk_close">[ Close ]</string>
+    <string name="vk_done">Done</string>
+    <string name="vk_back">Back</string>
+    <string name="vk_more_options">More options</string>
+    <string name="vk_import">Import</string>
+    <string name="vk_clipboard_label">Moonlight Layout</string>
+
+    <!-- Virtual keyboard: layout editor menu -->
+    <string name="vk_menu">Menu</string>
+    <string name="vk_layout_menu">Layout Menu</string>
+    <string name="vk_editor_hint">Tap a button to inspect or add new buttons</string>
+    <string name="vk_add_button">Add New Button</string>
+    <string name="vk_add_controller">Add D-Pad Controller</string>
+    <string name="vk_preview_background">Preview Background</string>
+    <string name="vk_pick_image">Pick Image</string>
+    <string name="vk_clear_image">Clear Image</string>
+    <string name="vk_save_layout">Save Layout</string>
+    <string name="vk_reset_default">Reset to Default</string>
+    <string name="vk_exit">Exit</string>
+    <string name="vk_exit_unsaved">EXIT (Unsaved)</string>
+    <string name="vk_close_menu">Close Menu</string>
+    <string name="vk_duplicate_button">Duplicate Button</string>
+    <string name="vk_delete_button">Delete This Button</string>
+
+    <!-- Virtual keyboard: button inspector -->
+    <string name="vk_button_settings">Button Settings</string>
+    <string name="vk_button_label">Button Label:</string>
+    <string name="vk_key_assignment">Key Assignment (Single or Combo):</string>
+    <string name="vk_directional_mapping">Directional Keys Mapping:</string>
+    <string name="vk_diagonal_hint">* Diagonals combine 2 keys automatically</string>
+    <string name="vk_show_border">Show Border</string>
+    <string name="vk_show_border_desc">Display visual border outline around the key</string>
+    <string name="vk_slide_mode">Slide Mode</string>
+    <string name="vk_slide_mode_desc">Trigger key press when sliding or swiping finger into it</string>
+    <string name="vk_hold_outside">Hold on Slide Out</string>
+    <string name="vk_hold_outside_desc">Keep key pressed when finger moves outside the button boundary (ADS / Aim / Fire)</string>
+    <string name="vk_absorb_touch">Absorb Touch</string>
+    <string name="vk_absorb_touch_desc">Block mouse and camera movement on stream while touching this key</string>
+    <string name="vk_switch_input_on_toggle">Switch Input on Toggle</string>
+    <string name="vk_switch_input_on_toggle_desc">Switch to touchscreen input when the overlay is hidden, and back to trackpad when it is shown</string>
+    <string name="vk_block_touch">Block Touch</string>
+    <string name="vk_block_touch_desc">Absorb all touches in this zone without sending any input</string>
+
+    <!-- Virtual keyboard: dynamic readout labels -->
+    <string name="vk_label_position_x">Position X</string>
+    <string name="vk_label_position_y">Position Y</string>
+    <string name="vk_label_size">Size</string>
+    <string name="vk_label_width">Width</string>
+    <string name="vk_label_height">Height</string>
+    <string name="vk_label_combo_none">[None]</string>
+    <string name="vk_label_none_option">[ None ] - Remove</string>
+
+    <string name="vk_percent_int_format">%1$s: %2$d%%</string>
+    <string name="vk_percent_float_format">%1$s: %2$.1f%%</string>
+    <string name="vk_corner_radius_format">Corner Radius: %1$ddp</string>
+    <string name="vk_background_opacity_format">Background Opacity: %1$d%%</string>
+    <string name="vk_text_opacity_format">Text Opacity: %1$d%%</string>
+    <string name="vk_title_button_format">Button: %1$s</string>
+    <string name="vk_title_controller_format">Controller: %1$s</string>
+    <string name="vk_title_scroll_format">Scroll: %1$s</string>
+    <string name="vk_key_main_format">Key 1 (Main): %1$s</string>
+    <string name="vk_key_format">Key: %1$s</string>
+    <string name="vk_combo_key_format">Combo Key %1$d: %2$s</string>
+    <string name="vk_dir_up_format">Up (▲): %1$s</string>
+    <string name="vk_dir_down_format">Down (▼): %1$s</string>
+    <string name="vk_dir_left_format">Left (◀): %1$s</string>
+    <string name="vk_dir_right_format">Right (▶): %1$s</string>
+    <string name="vk_map_combo_key_title">Map Combo Key %1$d</string>
+    <string name="vk_map_key_title">Map Key for %1$s</string>
+
+    <string name="vk_direction_up">Up</string>
+    <string name="vk_direction_down">Down</string>
+    <string name="vk_direction_left">Left</string>
+    <string name="vk_direction_right">Right</string>
+
+    <!-- Virtual keyboard: key binding display names -->
+    <string name="vk_binding_toggle_overlay">Toggle Keys Overlay</string>
+    <string name="vk_binding_open_pc_keyboard">Open PC Keyboard</string>
+    <string name="vk_binding_open_pc_mouse">Open PC Mouse</string>
+    <string name="vk_binding_open_android_keyboard">Open Android Keyboard</string>
+    <string name="vk_binding_toggle_stream_menu">Toggle In-Stream Menu</string>
+    <string name="vk_binding_scroll_up">Scroll Up</string>
+    <string name="vk_binding_scroll_down">Scroll Down</string>
+    <string name="vk_binding_action_format">Action (%1$d)</string>
+    <string name="vk_binding_mouse_left">Mouse Left</string>
+    <string name="vk_binding_mouse_right">Mouse Right</string>
+    <string name="vk_binding_mouse_middle">Mouse Middle</string>
+    <string name="vk_binding_mouse_back">Mouse X1 (Back)</string>
+    <string name="vk_binding_mouse_forward">Mouse X2 (Forward)</string>
+    <string name="vk_binding_mouse_format">Mouse (%1$d)</string>
+    <string name="vk_binding_action_toggle_overlay">Action: Toggle Keys Overlay</string>
+    <string name="vk_binding_action_open_pc_keyboard">Action: Open PC Keyboard</string>
+    <string name="vk_binding_action_open_pc_mouse">Action: Open PC Mouse</string>
+    <string name="vk_binding_action_open_android_keyboard">Action: Open Android Keyboard</string>
+    <string name="vk_binding_action_toggle_stream_menu">Action: Toggle In-Stream Menu</string>
+
+    <!-- Virtual keyboard: dialogs and toasts -->
+    <string name="vk_reset_layout_title">Reset Layout</string>
+    <string name="vk_reset_layout_message">Are you sure you want to reset the layout to default? All custom buttons and changes will be lost.</string>
+    <string name="vk_reset">Reset</string>
+    <string name="vk_unsaved_title">Unsaved Changes</string>
+    <string name="vk_unsaved_message">You have unsaved changes in your keyboard layout. Do you want to save before exiting?</string>
+    <string name="vk_save_and_exit">Save &amp; Exit</string>
+    <string name="vk_discard">Discard</string>
+    <string name="vk_select_key_mapping">Select Key Mapping</string>
+    <string name="vk_toast_background_cleared">Background cleared</string>
+    <string name="vk_toast_layout_saved">Layout saved successfully</string>
+    <string name="vk_toast_layout_reset">Layout reset to default</string>
+    <string name="vk_toast_button_duplicated">Button duplicated</string>
+    <string name="vk_toast_button_deleted">Button deleted</string>
+    <string name="vk_toast_background_updated">Background updated successfully</string>
+    <string name="vk_toast_image_failed">Failed to load image</string>
+
+    <!-- Virtual keyboard: manage layouts screen -->
+    <string name="vk_layouts_title">Layouts</string>
+    <string name="vk_new">+ New</string>
+    <string name="vk_no_layouts">No keyboard layouts found.\nTap \'+ New\' to create one.</string>
+    <string name="vk_default_layout_name">Default Layout</string>
+    <string name="vk_active_badge">ACTIVE</string>
+    <string name="vk_active">✓ Active</string>
+    <string name="vk_set_active">Set Active</string>
+    <string name="vk_edit_layout">Edit Layout</string>
+    <string name="vk_active_name_fallback">Active</string>
+    <string name="vk_custom_layout_name_format">Custom Layout %1$d</string>
+    <string name="vk_layout_name_hint">Layout Name</string>
+    <string name="vk_layout_name_optional_hint">Layout Name (Optional)</string>
+    <string name="vk_template_blank">Start Blank (No initial buttons)</string>
+    <string name="vk_template_clone_format">Clone Active Layout (%1$s)</string>
+    <string name="vk_create_layout_title">Create New Layout</string>
+    <string name="vk_create">Create</string>
+    <string name="vk_rename_layout_title">Rename Layout</string>
+    <string name="vk_rename">Rename</string>
+    <string name="vk_copy_name_format">%1$s (Copy)</string>
+    <string name="vk_clone_layout_title">Clone Layout</string>
+    <string name="vk_clone">Clone</string>
+    <string name="vk_delete_layout_title">Delete Layout</string>
+    <string name="vk_delete_layout_message">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
+    <string name="vk_delete">Delete</string>
+    <string name="vk_export_layout_title">Export Layout: %1$s</string>
+    <string name="vk_export_json">Export JSON</string>
+    <string name="vk_export_option_clipboard">Copy JSON to Clipboard</string>
+    <string name="vk_export_option_file">Export to File (.json)</string>
+    <string name="vk_import_option_file">Import from File (.json)</string>
+    <string name="vk_import_option_clipboard">Paste JSON from Clipboard</string>
+    <string name="vk_import_layout_title">Import Keyboard Layout</string>
+    <string name="vk_paste_json_title">Paste JSON Layout</string>
+    <string name="vk_paste_json_hint">Paste JSON here...</string>
+    <string name="vk_toast_created">Created: %1$s</string>
+    <string name="vk_toast_cloned">Cloned layout: %1$s</string>
+    <string name="vk_toast_deleted">Deleted: %1$s</string>
+    <string name="vk_toast_imported">Imported layout: %1$s</string>
+    <string name="vk_toast_parse_failed">Failed to parse layout JSON</string>
+    <string name="vk_toast_exported">Layout exported successfully!</string>
+    <string name="vk_toast_export_unavailable">File export unavailable on this device</string>
+    <string name="vk_toast_export_failed">Failed to export file: %1$s</string>
+    <string name="vk_toast_read_failed">Failed to read file: %1$s</string>
+    <string name="vk_toast_json_copied">JSON copied to clipboard!</string>
+    <string name="vk_toast_active_layout">Active layout: %1$s</string>
+    <string name="vk_profile_info_format">%1$d keys • Modified %2$s</string>
+
+    <!-- Virtual keyboard: in-stream menu -->
+    <string name="vk_stream_menu">Stream Menu</string>
+    <string name="vk_quick_controls">Quick in-game controls</string>
+    <string name="vk_section_appearance">APPEARANCE</string>
+    <string name="vk_section_keyboard_layout">KEYBOARD LAYOUT</string>
+    <string name="vk_section_session_actions">SESSION ACTIONS</string>
+    <string name="vk_layout_opacity_format">Layout opacity: %1$d%%</string>
+    <string name="vk_mouse_sensitivity_format">Mouse Sensitivity: %1$d%%</string>
+    <string name="vk_use_touchscreen_as_trackpad">Use the touchscreen as a trackpad</string>
+    <string name="vk_keys_count_format">%1$d keys</string>
+    <string name="vk_disconnect_title">Disconnect Stream</string>
+    <string name="vk_disconnect_message">Do you want to disconnect from this streaming session? (The game will keep running on your PC)</string>
+    <string name="vk_disconnect">Disconnect</string>
+    <string name="vk_quit_game">Quit Game</string>
+    <string name="vk_quit_game_stream">Quit Game &amp; Stream</string>
+    <string name="vk_quit_game_message">Do you want to force quit the game on your PC and end this stream session?</string>
 </resources>

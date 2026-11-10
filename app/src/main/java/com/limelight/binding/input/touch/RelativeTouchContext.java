@@ -266,12 +266,19 @@ public class RelativeTouchContext implements TouchContext {
                     deltaY = -deltaY;
                 }
 
+                if (prefConfig != null) {
+                    double sensitivityScale = PreferenceConfiguration.getMouseSensitivityScale(prefConfig.mouseSensitivity);
+                    deltaX = (int) Math.round(deltaX * sensitivityScale);
+                    deltaY = (int) Math.round(deltaY * sensitivityScale);
+                }
+
                 if (pointerCount == 2) {
                     if (confirmedScroll) {
-                        conn.sendMouseHighResScroll((short)(deltaY * SCROLL_SPEED_FACTOR));
+                        int scrollFactor = (prefConfig != null && prefConfig.scrollSpeed > 0) ? prefConfig.scrollSpeed : SCROLL_SPEED_FACTOR;
+                        conn.sendMouseHighResScroll((short)(deltaY * scrollFactor));
                     }
                 } else {
-                    if (prefConfig.absoluteMouseMode) {
+                    if (prefConfig != null && prefConfig.absoluteMouseMode) {
                         conn.sendMouseMoveAsMousePosition(
                                 (short) deltaX,
                                 (short) deltaY,
