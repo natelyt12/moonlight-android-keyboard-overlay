@@ -20,18 +20,35 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Center-Right Floating Menu Button (Compact, No emoji) -->
+    <!-- Subtle empty-pack hint at center bottom -->
+    <TextView
+        android:id="@+id/text_empty_pack_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="18dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:gravity="center"
+        android:text="No layouts yet. Open Menu to add one and set it as default."
+        android:textColor="#8B949E"
+        android:textSize="11sp"
+        android:visibility="gone"
+        android:clickable="false"
+        android:focusable="false" />
+
+    <!-- Center-Right Floating Menu Pill -->
     <LinearLayout
         android:id="@+id/btn_open_menu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical|end"
         android:orientation="horizontal"
-        android:background="#E01C1E22"
+        android:background="@drawable/vk_floating_pill_bg"
         android:paddingStart="10dp"
-        android:paddingTop="12dp"
+        android:paddingTop="10dp"
         android:paddingEnd="10dp"
-        android:paddingBottom="12dp"
+        android:paddingBottom="10dp"
         android:clickable="true"
         android:focusable="false">
 
@@ -39,19 +56,56 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/vk_menu"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
+            android:textColor="#E6EDF3"
+            android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Compact Sidebar (Slide-in from right) -->
+    <!-- Floating Exit Preview Pill -->
+    <LinearLayout
+        android:id="@+id/btn_exit_preview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|end"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/vk_floating_pill_bg"
+        android:paddingStart="10dp"
+        android:paddingTop="7dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="7dp"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="false">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginEnd="5dp"
+            android:src="@drawable/ic_vk_close"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Exit Preview"
+            android:textColor="#E6EDF3"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Compact Minimalist Sidebar -->
     <ScrollView
         android:id="@+id/editor_sidebar"
-        android:layout_width="310dp"
+        android:layout_width="276dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
-        android:background="#F2141517"
-        android:padding="16dp"
+        android:background="@drawable/vk_sidebar_bg"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="0dp"
+        android:scrollbars="none"
         android:visibility="gone"
         android:clickable="true"
         android:elevation="12dp">
@@ -59,6 +113,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
             android:orientation="vertical">
 
             <!-- MODE A: GLOBAL MENU -->
@@ -72,72 +128,88 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="10dp">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/vk_layout_menu"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
 
-                    <TextView
+                        <TextView
+                            android:id="@+id/global_menu_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Pack Menu"
+                            android:textColor="#E6EDF3"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Manage layouts, background, and preview"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/btn_swap_sidebar_global"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="6dp"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_vk_swap_horiz"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:contentDescription="Swap menu side"
+                        android:clickable="true" />
+
+                    <ImageView
                         android:id="@+id/btn_close_sidebar_global"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:padding="6dp"
-                        android:text="@string/vk_close"
-                        android:textColor="#888888"
-                        android:textSize="13sp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_vk_close"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:contentDescription="@string/vk_close"
                         android:clickable="true" />
                 </LinearLayout>
 
+                <!-- Sub-layout Management Section -->
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:layout_marginBottom="12dp"
-                    android:text="@string/vk_editor_hint"
-                    android:textColor="#777777"
-                    android:textSize="11sp" />
-
-                <Button
-                    android:id="@+id/btn_add_key"
+                    android:id="@+id/btn_add_sublayout"
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
+                    android:layout_height="34dp"
                     android:layout_marginBottom="6dp"
-                    android:backgroundTint="#00B4D8"
+                    android:background="@drawable/vk_btn_primary"
+                    android:gravity="center"
+                    android:clickable="true"
                     android:textColor="#FFFFFF"
                     android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:text="@string/vk_add_button" />
+                    android:textStyle="bold"
+                    android:text="Add New Layout" />
 
-                <Button
-                    android:id="@+id/btn_add_controller"
+                <LinearLayout
+                    android:id="@+id/container_sublayouts"
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
-                    android:layout_marginBottom="8dp"
-                    android:backgroundTint="#7209B7"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:text="@string/vk_add_controller" />
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="8dp" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#22FFFFFF"
-                    android:layout_marginTop="6dp"
-                    android:layout_marginBottom="10dp" />
+                    android:background="#21262D"
+                    android:layout_marginBottom="8dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/vk_preview_background"
-                    android:textColor="#AAAAAA"
-                    android:textSize="12sp"
+                    android:textColor="#8B949E"
+                    android:textSize="11sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="6dp" />
 
@@ -147,28 +219,30 @@
                     android:orientation="horizontal"
                     android:layout_marginBottom="8dp">
 
-                    <Button
+                    <TextView
                         android:id="@+id/btn_pick_bg"
                         android:layout_width="0dp"
                         android:layout_weight="1"
-                        android:layout_height="36dp"
+                        android:layout_height="32dp"
                         android:layout_marginEnd="4dp"
-                        android:backgroundTint="#2D3035"
-                        android:textColor="#FFFFFF"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#E6EDF3"
                         android:textSize="11sp"
-                        android:textAllCaps="false"
                         android:text="@string/vk_pick_image" />
 
-                    <Button
+                    <TextView
                         android:id="@+id/btn_clear_bg"
                         android:layout_width="0dp"
                         android:layout_weight="1"
-                        android:layout_height="36dp"
+                        android:layout_height="32dp"
                         android:layout_marginStart="4dp"
-                        android:backgroundTint="#2D3035"
-                        android:textColor="#CCCCCC"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#8B949E"
                         android:textSize="11sp"
-                        android:textAllCaps="false"
                         android:text="@string/vk_clear_image" />
                 </LinearLayout>
 
@@ -177,69 +251,329 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Background Opacity: 100%"
-                    android:textColor="#888888"
+                    android:textColor="#8B949E"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.limelight.binding.input.virtual_keyboard.VkSliderView
                     android:id="@+id/seekbar_bg_opacity"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="100"
-                    android:progress="100"
-                    android:layout_marginBottom="10dp" />
+                    android:layout_height="24dp"
+                    android:layout_marginBottom="8dp" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#22FFFFFF"
-                    android:layout_marginTop="4dp"
+                    android:background="#21262D"
                     android:layout_marginBottom="10dp" />
 
+                <TextView
+                    android:id="@+id/btn_preview_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:layout_marginBottom="6dp"
+                    android:background="@drawable/vk_btn_secondary"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:textColor="#2196F3"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:text="Preview Controls" />
 
-
-                <Button
+                <TextView
                     android:id="@+id/btn_save_layout"
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
+                    android:layout_height="34dp"
                     android:layout_marginBottom="6dp"
-                    android:backgroundTint="#00B4D8"
+                    android:background="@drawable/vk_btn_primary"
+                    android:gravity="center"
+                    android:clickable="true"
                     android:textColor="#FFFFFF"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:textAllCaps="false"
                     android:text="@string/vk_save_layout" />
 
-                <Button
-                    android:id="@+id/btn_reset_layout"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
-                    android:layout_marginBottom="6dp"
-                    android:backgroundTint="#D90429"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:text="@string/vk_reset_default" />
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="6dp">
 
-                <Button
-                    android:id="@+id/btn_exit_editor"
-                    android:layout_width="match_parent"
-                    android:layout_height="38dp"
-                    android:layout_marginBottom="6dp"
-                    android:backgroundTint="#2D3035"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:text="@string/vk_exit" />
+                    <TextView
+                        android:id="@+id/btn_reset_layout"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/vk_btn_danger"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#F87171"
+                        android:textSize="11sp"
+                        android:text="@string/vk_reset_default" />
 
-                <Button
+                    <TextView
+                        android:id="@+id/btn_exit_editor"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="4dp"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#E6EDF3"
+                        android:textSize="11sp"
+                        android:text="@string/vk_exit" />
+                </LinearLayout>
+
+                <TextView
                     android:id="@+id/btn_close_menu_bottom"
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
-                    android:backgroundTint="#1F2124"
-                    android:textColor="#AAAAAA"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
+                    android:layout_height="30dp"
+                    android:background="@drawable/vk_btn_secondary"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:textColor="#8B949E"
+                    android:textSize="11sp"
                     android:text="@string/vk_close_menu" />
+
+            </LinearLayout>
+
+
+            <!-- MODE C: SUB-LAYOUT EDITOR (Children of a Layout Pack) -->
+            <LinearLayout
+                android:id="@+id/panel_sublayout_editor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:id="@+id/btn_back_to_pack"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="8dp"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_vk_chevron_left"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:contentDescription="@string/vk_close"
+                        android:clickable="true" />
+
+                    <TextView
+                        android:id="@+id/sublayout_editor_title"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        tools:text="Layout 1"
+                        android:textColor="#E6EDF3"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:singleLine="true"
+                        android:ellipsize="end" />
+
+                    <ImageView
+                        android:id="@+id/btn_swap_sidebar_sublayout"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_vk_swap_horiz"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:contentDescription="Swap menu side"
+                        android:clickable="true" />
+
+                    <ImageView
+                        android:id="@+id/btn_close_sidebar_sublayout"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_vk_close"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:contentDescription="@string/vk_close"
+                        android:visibility="gone"
+                        android:clickable="true" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#21262D"
+                    android:layout_marginBottom="10dp" />
+
+                <!-- 2-Column Add Actions (Moved into Sub-Layout Editor) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:id="@+id/btn_add_key"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/vk_btn_primary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:text="@string/vk_add_button" />
+
+                    <TextView
+                        android:id="@+id/btn_add_controller"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="4dp"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#2196F3"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:text="@string/vk_add_controller" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:id="@+id/btn_rename_sublayout"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="30dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#E6EDF3"
+                        android:textSize="11sp"
+                        android:text="Rename" />
+
+                    <TextView
+                        android:id="@+id/btn_clone_sublayout"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="30dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#E6EDF3"
+                        android:textSize="11sp"
+                        android:text="Clone" />
+
+                    <TextView
+                        android:id="@+id/btn_delete_sublayout"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="30dp"
+                        android:background="@drawable/vk_btn_danger"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#F87171"
+                        android:textSize="11sp"
+                        android:text="Delete" />
+                </LinearLayout>
+
+                <!-- Active on first load toggle -->
+                <LinearLayout
+                    android:id="@+id/layout_container_sublayout_active"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="6dp"
+                    android:clickable="true">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Active Layout"
+                            android:textColor="#E6EDF3"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Load this layout first when pack opens"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <com.limelight.binding.input.virtual_keyboard.VkSwitchView
+                        android:id="@+id/checkbox_sublayout_active"
+                        android:layout_width="34dp"
+                        android:layout_height="18dp" />
+                </LinearLayout>
+
+                <!-- Mouse Input Mode Selector -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mouse Input"
+                    android:textColor="#8B949E"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:id="@+id/btn_mouse_mode_touchpad"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="30dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#E6EDF3"
+                        android:textSize="11sp"
+                        android:text="Touchpad" />
+
+                    <TextView
+                        android:id="@+id/btn_mouse_mode_direct"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="30dp"
+                        android:layout_marginStart="4dp"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#8B949E"
+                        android:textSize="11sp"
+                        android:text="Direct" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vk_editor_hint"
+                    android:textColor="#6E7681"
+                    android:textSize="10sp" />
 
             </LinearLayout>
 
@@ -256,7 +590,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="6dp">
 
                     <TextView
                         android:id="@+id/inspector_title"
@@ -264,27 +599,66 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/vk_button_settings"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
+                        android:textColor="#E6EDF3"
+                        android:textSize="14sp"
                         android:textStyle="bold" />
 
-                    <TextView
+                    <ImageView
                         android:id="@+id/btn_close_inspector"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:padding="6dp"
-                        android:text="@string/vk_close"
-                        android:textColor="#888888"
-                        android:textSize="13sp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_vk_close"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:contentDescription="@string/vk_close"
                         android:clickable="true" />
                 </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#22FFFFFF"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="10dp" />
+                    android:background="#21262D"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Block Touch (Top of inspector) -->
+                <LinearLayout
+                    android:id="@+id/layout_container_block_touch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="6dp"
+                    android:clickable="true">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_block_touch"
+                            android:textColor="#E6EDF3"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/hint_key_block_touch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_block_touch_desc"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <com.limelight.binding.input.virtual_keyboard.VkSwitchView
+                        android:id="@+id/checkbox_key_block_touch"
+                        android:layout_width="34dp"
+                        android:layout_height="18dp" />
+                </LinearLayout>
 
                 <!-- Label & Key Code -->
                 <LinearLayout
@@ -297,16 +671,17 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/vk_button_label"
-                        android:textColor="#AAAAAA"
-                        android:textSize="11sp" />
+                        android:textColor="#8B949E"
+                        android:textSize="10sp"
+                        android:layout_marginBottom="3dp" />
 
                     <EditText
                         android:id="@+id/edit_key_label"
                         android:layout_width="match_parent"
-                        android:layout_height="38dp"
-                        android:background="#2D3035"
-                        android:textColor="#FFFFFF"
-                        android:textSize="13sp"
+                        android:layout_height="34dp"
+                        android:background="@drawable/vk_input_bg"
+                        android:textColor="#E6EDF3"
+                        android:textSize="12sp"
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp"
                         android:singleLine="true"
@@ -317,61 +692,83 @@
                     android:id="@+id/label_key_mapping"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/vk_key_assignment"
-                    android:textColor="#AAAAAA"
-                    android:textSize="11sp"
+                    android:text="Key assignment"
+                    android:textColor="#8B949E"
+                    android:textSize="10sp"
                     android:layout_marginBottom="4dp" />
 
-                <Button
+                <TextView
                     android:id="@+id/btn_change_keycode"
                     android:layout_width="match_parent"
-                    android:layout_height="36dp"
-                    android:backgroundTint="#3A3D44"
-                    android:textColor="#00B4D8"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    tools:text="Key 1 (Main): KEY_W"
-                    android:layout_marginBottom="4dp" />
+                    android:layout_height="32dp"
+                    android:background="@drawable/vk_btn_secondary"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:textColor="#2196F3"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="Key: KEY_W"
+                    android:layout_marginBottom="8dp" />
 
+                <!-- Change layout on press -->
                 <LinearLayout
-                    android:id="@+id/layout_combo_keys"
+                    android:id="@+id/layout_container_change_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="6dp">
 
-                    <Button
-                        android:id="@+id/btn_change_extra_key1"
+                    <LinearLayout
+                        android:id="@+id/row_change_layout"
                         android:layout_width="match_parent"
-                        android:layout_height="34dp"
-                        android:layout_marginBottom="4dp"
-                        android:backgroundTint="#2D3035"
-                        android:textColor="#CCCCCC"
-                        android:textSize="11sp"
-                        android:textAllCaps="false"
-                        tools:text="Combo Key 2: [None]" />
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="4dp"
+                        android:clickable="true">
 
-                    <Button
-                        android:id="@+id/btn_change_extra_key2"
-                        android:layout_width="match_parent"
-                        android:layout_height="34dp"
-                        android:layout_marginBottom="4dp"
-                        android:backgroundTint="#2D3035"
-                        android:textColor="#CCCCCC"
-                        android:textSize="11sp"
-                        android:textAllCaps="false"
-                        tools:text="Combo Key 3: [None]" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:orientation="vertical">
 
-                    <Button
-                        android:id="@+id/btn_change_extra_key3"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Change layout"
+                                android:textColor="#E6EDF3"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Choose a layout to switch to when pressed"
+                                android:textColor="#6E7681"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <com.limelight.binding.input.virtual_keyboard.VkSwitchView
+                            android:id="@+id/checkbox_key_change_layout"
+                            android:layout_width="34dp"
+                            android:layout_height="18dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/btn_select_target_layout"
                         android:layout_width="match_parent"
-                        android:layout_height="34dp"
-                        android:layout_marginBottom="4dp"
-                        android:backgroundTint="#2D3035"
-                        android:textColor="#CCCCCC"
+                        android:layout_height="30dp"
+                        android:layout_marginTop="2dp"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#2196F3"
                         android:textSize="11sp"
-                        android:textAllCaps="false"
-                        tools:text="Combo Key 4: [None]" />
+                        android:textStyle="bold"
+                        android:visibility="gone"
+                        tools:text="Target: Layout 2" />
                 </LinearLayout>
 
                 <!-- Controller / Joystick 4-Directional Key Mappings -->
@@ -386,73 +783,113 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/vk_directional_mapping"
-                        android:textColor="#AAAAAA"
-                        android:textSize="11sp"
+                        android:textColor="#8B949E"
+                        android:textSize="10sp"
                         android:layout_marginBottom="4dp" />
 
-                    <!-- Up Key -->
-                    <Button
+                    <TextView
                         android:id="@+id/btn_key_up"
                         android:layout_width="match_parent"
-                        android:layout_height="36dp"
+                        android:layout_height="32dp"
                         android:layout_marginBottom="4dp"
-                        android:backgroundTint="#2D3035"
-                        android:textColor="#FFFFFF"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#E6EDF3"
                         android:textSize="11sp"
-                        android:textAllCaps="false"
                         tools:text="Up (▲): W" />
 
-                    <!-- Left & Right Keys -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:layout_marginBottom="4dp">
 
-                        <Button
+                        <TextView
                             android:id="@+id/btn_key_left"
                             android:layout_width="0dp"
                             android:layout_weight="1"
-                            android:layout_height="36dp"
+                            android:layout_height="32dp"
                             android:layout_marginEnd="4dp"
-                            android:backgroundTint="#2D3035"
-                            android:textColor="#FFFFFF"
+                            android:background="@drawable/vk_btn_secondary"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:textColor="#E6EDF3"
                             android:textSize="11sp"
-                            android:textAllCaps="false"
                             tools:text="Left (◀): A" />
 
-                        <Button
+                        <TextView
                             android:id="@+id/btn_key_right"
                             android:layout_width="0dp"
                             android:layout_weight="1"
-                            android:layout_height="36dp"
+                            android:layout_height="32dp"
                             android:layout_marginStart="4dp"
-                            android:backgroundTint="#2D3035"
-                            android:textColor="#FFFFFF"
+                            android:background="@drawable/vk_btn_secondary"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:textColor="#E6EDF3"
                             android:textSize="11sp"
-                            android:textAllCaps="false"
                             tools:text="Right (▶): D" />
                     </LinearLayout>
 
-                    <!-- Down Key -->
-                    <Button
+                    <TextView
                         android:id="@+id/btn_key_down"
                         android:layout_width="match_parent"
-                        android:layout_height="36dp"
+                        android:layout_height="32dp"
                         android:layout_marginBottom="4dp"
-                        android:backgroundTint="#2D3035"
-                        android:textColor="#FFFFFF"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#E6EDF3"
                         android:textSize="11sp"
-                        android:textAllCaps="false"
                         tools:text="Down (▼): S" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/vk_diagonal_hint"
-                        android:textColor="#777777"
+                        android:textColor="#6E7681"
                         android:textSize="10sp"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_marginBottom="6dp" />
+                </LinearLayout>
+
+                <!-- Snap to Grid Toggle -->
+                <LinearLayout
+                    android:id="@+id/layout_container_snap"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="6dp"
+                    android:clickable="true">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Snap to edges"
+                            android:textColor="#E6EDF3"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Align edges and centers with other buttons"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <com.limelight.binding.input.virtual_keyboard.VkSwitchView
+                        android:id="@+id/checkbox_snap_to_grid"
+                        android:layout_width="34dp"
+                        android:layout_height="18dp" />
                 </LinearLayout>
 
                 <!-- Position X & Y -->
@@ -461,28 +898,67 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Position X: 0%"
-                    android:textColor="#888888"
+                    android:textColor="#8B949E"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.limelight.binding.input.virtual_keyboard.VkSliderView
                     android:id="@+id/seekbar_key_pos_x"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_height="24dp"
+                    android:layout_marginBottom="2dp" />
 
                 <TextView
                     android:id="@+id/label_key_pos_y"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Position Y: 0%"
-                    android:textColor="#888888"
+                    android:textColor="#8B949E"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.limelight.binding.input.virtual_keyboard.VkSliderView
                     android:id="@+id/seekbar_key_pos_y"
                     android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:layout_marginBottom="2dp" />
+
+                <!-- Lock 1:1 Square -->
+                <LinearLayout
+                    android:id="@+id/layout_container_lock_square"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="6dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="6dp"
+                    android:clickable="true">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Lock 1:1 (Square)"
+                            android:textColor="#E6EDF3"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Keep width and height equal"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <com.limelight.binding.input.virtual_keyboard.VkSwitchView
+                        android:id="@+id/checkbox_key_lock_square"
+                        android:layout_width="34dp"
+                        android:layout_height="18dp" />
+                </LinearLayout>
 
                 <!-- Width & Height -->
                 <TextView
@@ -490,28 +966,28 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Width:"
-                    android:textColor="#888888"
+                    android:textColor="#8B949E"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.limelight.binding.input.virtual_keyboard.VkSliderView
                     android:id="@+id/seekbar_key_width"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_height="24dp"
+                    android:layout_marginBottom="2dp" />
 
                 <TextView
                     android:id="@+id/label_key_height"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Height:"
-                    android:textColor="#888888"
+                    android:textColor="#8B949E"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.limelight.binding.input.virtual_keyboard.VkSliderView
                     android:id="@+id/seekbar_key_height"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_height="24dp"
+                    android:layout_marginBottom="2dp" />
 
                 <!-- Corner Radius -->
                 <TextView
@@ -519,16 +995,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Corner Radius: 0dp"
-                    android:textColor="#888888"
+                    android:textColor="#8B949E"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.limelight.binding.input.virtual_keyboard.VkSliderView
                     android:id="@+id/seekbar_key_radius"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="35"
-                    android:progress="0"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_height="24dp"
+                    android:layout_marginBottom="2dp" />
 
                 <!-- Background Opacity -->
                 <TextView
@@ -536,15 +1010,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Background Opacity: 45%"
-                    android:textColor="#888888"
+                    android:textColor="#8B949E"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.limelight.binding.input.virtual_keyboard.VkSliderView
                     android:id="@+id/seekbar_key_bg_opacity"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="100"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_height="24dp"
+                    android:layout_marginBottom="2dp" />
 
                 <!-- Text Opacity -->
                 <TextView
@@ -552,207 +1025,231 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Text Opacity: 100%"
-                    android:textColor="#888888"
+                    android:textColor="#8B949E"
                     android:textSize="11sp" />
 
-                <SeekBar
+                <com.limelight.binding.input.virtual_keyboard.VkSliderView
                     android:id="@+id/seekbar_key_text_opacity"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="100"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_height="24dp"
+                    android:layout_marginBottom="6dp" />
 
-                <!-- Toggles (Level-1 Options) -->
-                <LinearLayout
-                    android:id="@+id/layout_container_border"
+                <View
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_height="1dp"
+                    android:background="#21262D"
+                    android:layout_marginBottom="6dp" />
 
-                    <CheckBox
-                        android:id="@+id/checkbox_key_border"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/vk_show_border"
-                        android:tooltipText="Display visual border outline around the key"
-                        android:textColor="#CCCCCC"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/hint_key_border"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="26dp"
-                        android:layout_marginBottom="6dp"
-                        android:text="@string/vk_show_border_desc"
-                        android:textColor="#777777"
-                        android:textSize="10sp" />
-                </LinearLayout>
-
+                <!-- Compact Toggles -->
                 <LinearLayout
                     android:id="@+id/layout_container_slide"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:clickable="true">
 
-                    <CheckBox
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_slide_mode"
+                            android:textColor="#E6EDF3"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/hint_key_slide"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_slide_mode_desc"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <com.limelight.binding.input.virtual_keyboard.VkSwitchView
                         android:id="@+id/checkbox_key_slide"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/vk_slide_mode"
-                        android:tooltipText="Trigger key press when sliding or swiping finger into it"
-                        android:textColor="#CCCCCC"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/hint_key_slide"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="26dp"
-                        android:layout_marginBottom="6dp"
-                        android:text="@string/vk_slide_mode_desc"
-                        android:textColor="#777777"
-                        android:textSize="10sp" />
+                        android:layout_width="34dp"
+                        android:layout_height="18dp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/layout_container_hold_outside"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:clickable="true">
 
-                    <CheckBox
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_hold_outside"
+                            android:textColor="#E6EDF3"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/hint_key_hold_outside"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_hold_outside_desc"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <com.limelight.binding.input.virtual_keyboard.VkSwitchView
                         android:id="@+id/checkbox_key_hold_outside"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/vk_hold_outside"
-                        android:tooltipText="Do not release key when finger moves outside the button boundary"
-                        android:textColor="#CCCCCC"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/hint_key_hold_outside"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="26dp"
-                        android:layout_marginBottom="6dp"
-                        android:text="@string/vk_hold_outside_desc"
-                        android:textColor="#777777"
-                        android:textSize="10sp" />
+                        android:layout_width="34dp"
+                        android:layout_height="18dp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/layout_container_absorb_touch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:clickable="true">
 
-                    <CheckBox
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_absorb_touch"
+                            android:textColor="#E6EDF3"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/hint_key_absorb_touch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_absorb_touch_desc"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <com.limelight.binding.input.virtual_keyboard.VkSwitchView
                         android:id="@+id/checkbox_key_absorb_touch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/vk_absorb_touch"
-                        android:tooltipText="Absorb touches to prevent stream mouse and camera movement"
-                        android:textColor="#CCCCCC"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/hint_key_absorb_touch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="26dp"
-                        android:layout_marginBottom="6dp"
-                        android:text="@string/vk_absorb_touch_desc"
-                        android:textColor="#777777"
-                        android:textSize="10sp" />
+                        android:layout_width="34dp"
+                        android:layout_height="18dp" />
                 </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/layout_container_block_touch"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <CheckBox
-                        android:id="@+id/checkbox_key_block_touch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/vk_block_touch"
-                        android:tooltipText="Absorb all touches in this zone without sending any input"
-                        android:textColor="#CCCCCC"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/hint_key_block_touch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="26dp"
-                        android:layout_marginBottom="12dp"
-                        android:text="@string/vk_block_touch_desc"
-                        android:textColor="#777777"
-                        android:textSize="10sp" />
-                </LinearLayout>
-
-                <!-- Toggle Keys Overlay action: optional input mode switching -->
                 <LinearLayout
                     android:id="@+id/layout_container_switch_input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="6dp"
+                    android:clickable="true"
                     android:visibility="gone">
 
-                    <CheckBox
-                        android:id="@+id/checkbox_key_switch_input"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="@string/vk_switch_input_on_toggle"
-                        android:tooltipText="Switch to touchscreen input when the overlay is hidden"
-                        android:textColor="#CCCCCC"
-                        android:textSize="12sp" />
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/hint_key_switch_input"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="26dp"
-                        android:layout_marginBottom="6dp"
-                        android:text="@string/vk_switch_input_on_toggle_desc"
-                        android:textColor="#777777"
-                        android:textSize="10sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_switch_input_on_toggle"
+                            android:textColor="#E6EDF3"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/hint_key_switch_input"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/vk_switch_input_on_toggle_desc"
+                            android:textColor="#6E7681"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <com.limelight.binding.input.virtual_keyboard.VkSwitchView
+                        android:id="@+id/checkbox_key_switch_input"
+                        android:layout_width="34dp"
+                        android:layout_height="18dp" />
                 </LinearLayout>
 
-                <!-- Actions -->
-                <Button
-                    android:id="@+id/btn_duplicate_key"
+                <View
+                    android:id="@+id/divider_inspector_toggles"
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
-                    android:layout_marginBottom="6dp"
-                    android:backgroundTint="#4361EE"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:text="@string/vk_duplicate_button" />
+                    android:layout_height="1dp"
+                    android:background="#21262D"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="8dp" />
 
-                <Button
-                    android:id="@+id/btn_delete_key"
+                <!-- 2-Column Duplicate / Delete -->
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
-                    android:layout_marginBottom="8dp"
-                    android:backgroundTint="#D90429"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    android:text="@string/vk_delete_button" />
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="6dp">
 
-                <Button
+                    <TextView
+                        android:id="@+id/btn_duplicate_key"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/vk_btn_secondary"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#E6EDF3"
+                        android:textSize="11sp"
+                        android:text="@string/vk_duplicate_button" />
+
+                    <TextView
+                        android:id="@+id/btn_delete_key"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="4dp"
+                        android:background="@drawable/vk_btn_danger"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:textColor="#F87171"
+                        android:textSize="11sp"
+                        android:text="@string/vk_delete_button" />
+                </LinearLayout>
+
+                <TextView
                     android:id="@+id/btn_done_inspector"
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
-                    android:backgroundTint="#00B4D8"
+                    android:layout_height="34dp"
+                    android:background="@drawable/vk_btn_primary"
+                    android:gravity="center"
+                    android:clickable="true"
                     android:textColor="#FFFFFF"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:textAllCaps="false"
                     android:text="@string/vk_done" />
 
             </LinearLayout>

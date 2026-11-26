@@ -14,7 +14,6 @@ public class VirtualKey {
     public static final int ACTION_CODE_TOGGLE_MOUSE = 4;
     public static final int ACTION_CODE_SCROLL_UP = 5;
     public static final int ACTION_CODE_SCROLL_DOWN = 6;
-    public static final int ACTION_CODE_TOGGLE_STREAM_MENU = 7;
 
 
     public final String id;
@@ -41,6 +40,13 @@ public class VirtualKey {
     // Toggle-overlay action keys only: when the overlay is toggled off, switch the
     // touch input mode to direct touchscreen; switch back to trackpad when shown.
     public boolean switchInputModeOnToggle = false;
+
+    // Switch to a target sub-layout in the pack when pressed
+    public boolean changeLayout = false;
+    public String targetSubLayoutId = null;
+
+    // Lock width and height 1:1 (square/circle)
+    public boolean lockSquare = false;
 
     // Virtual Controller / Joystick (4-way directional + diagonal mapping)
     public boolean isJoystick = false;

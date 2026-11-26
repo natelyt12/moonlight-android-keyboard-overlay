@@ -476,7 +476,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             virtualKeyboardController = new VirtualKeyboardController(conn, keyboardTranslator,
                     (FrameLayout)streamView.getParent(),
                     this);
-            virtualKeyboardController.setOpacity(prefConfig.oscOpacity);
+            virtualKeyboardController.setOpacity(100);
             virtualKeyboardController.setVibrationEnabled(prefConfig.keyboardOverlayVibrate);
             virtualKeyboardController.setVibrationDuration(prefConfig.keyboardOverlayVibrateDuration);
             virtualKeyboardController.refreshLayout();
@@ -1423,13 +1423,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         inputManager.toggleSoftInput(0, 0);
     }
 
-    public void toggleInStreamMenu() {
-        LimeLog.info("Toggling in-stream sidebar menu");
-        if (virtualKeyboardController != null) {
-            virtualKeyboardController.toggleInStreamMenu();
-        }
-    }
-
     public int getMouseSensitivity() {
         return prefConfig != null ? prefConfig.mouseSensitivity : 100;
     }
@@ -1516,10 +1509,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void onBackPressed() {
-        if (virtualKeyboardController != null && virtualKeyboardController.isMenuOpen()) {
-            virtualKeyboardController.toggleInStreamMenu();
-            return;
-        }
         super.onBackPressed();
     }
 

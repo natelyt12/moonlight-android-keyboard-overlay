@@ -47,14 +47,14 @@ public class PcKeyboardOverlayView extends View {
     private static final float ROW_UNITS = 16f;
     private static final int ROW_COUNT = 6;
 
-    private static final float PAD_H_DP = 8f;
-    /** Tight gap between keys, matching the mouse overlay. */
-    private static final float GAP_DP = 3f;
+    private static final float PAD_H_DP = 4f;
+    /** Zero-gap edge-to-edge key grid for compact size and full-tile hitboxes. */
+    private static final float GAP_DP = 0f;
     private static final float TOP_PAD_DP = 2f;
     /** Thin drag strip, same weight as the resize strip at the bottom. */
-    private static final float DRAG_BAR_H_DP = 16f;
-    private static final float KEY_TOP_GAP_DP = 2f;
-    private static final float RESIZE_ZONE_DP = 16f;
+    private static final float DRAG_BAR_H_DP = 13f;
+    private static final float KEY_TOP_GAP_DP = 1f;
+    private static final float RESIZE_ZONE_DP = 13f;
 
     // ----------------------------------------------------------------------------------
     // Layout model
@@ -175,11 +175,10 @@ public class PcKeyboardOverlayView extends View {
     private static final int COLOR_PANEL_BG = 0xB312141A;
     private static final int COLOR_PANEL_BORDER = 0x2EFFFFFF;
 
-    private static final int COLOR_KEY_BG = 0x59232931;
-    private static final int COLOR_KEY_BG_MOD = 0x4D1B1F27;
-    private static final int COLOR_KEY_BORDER = 0x22FFFFFF;
+    private static final int COLOR_KEY_BG = 0x66212730;
+    private static final int COLOR_KEY_BG_MOD = 0x80171B22;
+    private static final int COLOR_KEY_BORDER = 0x26FFFFFF;
 
-    private static final int COLOR_KEY_PRESSED = 0xE600B4D8;
     private static final int COLOR_KEY_LOCKED = 0xE6FB8500;
     private static final int COLOR_KEY_CLOSE = 0x59D90429;
     private static final int COLOR_KEY_CLOSE_PRESSED = 0xE6D90429;
@@ -189,7 +188,9 @@ public class PcKeyboardOverlayView extends View {
 
     private static final int COLOR_TEXT = 0xFFFFFFFF;
     private static final int COLOR_TEXT_DIM = 0x99FFFFFF;
-    private static final int COLOR_ACCENT = 0xFF7BE9FF;
+
+    private final int colorKeyPressed;
+    private final int colorAccent;
 
     // ----------------------------------------------------------------------------------
     // Construction
@@ -199,6 +200,9 @@ public class PcKeyboardOverlayView extends View {
         super(context);
         this.conn = conn;
         this.translator = translator;
+        int deviceAccent = VkThemeColors.getAccentColor(context);
+        this.colorKeyPressed = VkThemeColors.withAlpha(deviceAccent, 0xE6);
+        this.colorAccent = deviceAccent;
 
         setFocusable(false);
         setClickable(true);
@@ -480,7 +484,7 @@ public class PcKeyboardOverlayView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        float panelRadius = dpToPx(12f);
+        float panelRadius = dpToPx(6f);
 
         // 1. Flat translucent panel (~70% opaque, matching the mouse overlay)
         RectF panel = new RectF(dpToPx(1f), dpToPx(1f), getWidth() - dpToPx(1f), getHeight() - dpToPx(1f));
@@ -524,20 +528,19 @@ public class PcKeyboardOverlayView extends View {
             fill = COLOR_KEY_LOCKED;
             border = COLOR_LOCKED_BORDER;
         } else if (pressed) {
-            fill = COLOR_KEY_PRESSED;
+            fill = colorKeyPressed;
             border = COLOR_PRESSED_BORDER;
         } else {
             fill = k.modifier ? COLOR_KEY_BG_MOD : COLOR_KEY_BG;
             border = COLOR_KEY_BORDER;
         }
 
-        float radius = dpToPx(5f);
         capPaint.setColor(fill);
-        canvas.drawRoundRect(k.rect, radius, radius, capPaint);
+        canvas.drawRect(k.rect, capPaint);
 
         capBorderPaint.setColor(border);
-        capBorderPaint.setStrokeWidth(dpToPx((pressed || locked) ? 1.6f : 0.9f));
-        canvas.drawRoundRect(k.rect, radius, radius, capBorderPaint);
+        capBorderPaint.setStrokeWidth((pressed || locked) ? dpToPx(1.5f) : Math.max(1f, dpToPx(0.7f)));
+        canvas.drawRect(k.rect, capBorderPaint);
 
         // Sticky / caps-lock status dot
         if (locked) {
@@ -562,7 +565,7 @@ public class PcKeyboardOverlayView extends View {
             // Real-keycap style: shifted symbol on top, primary symbol below.
             float topSize = fitTextSize(subTextPaint, k.shiftLabel, w * 0.74f, h * 0.38f, h * 0.32f);
             subTextPaint.setTextSize(topSize);
-            subTextPaint.setColor(active ? textColor : (shifted ? COLOR_ACCENT : COLOR_TEXT_DIM));
+            subTextPaint.setColor(active ? textColor : (shifted ? colorAccent : COLOR_TEXT_DIM));
 
             float botSize = fitTextSize(textPaint, k.label, w * 0.74f, h * 0.42f, h * 0.40f);
             textPaint.setTextSize(botSize);
@@ -906,6 +909,7 @@ public class PcKeyboardOverlayView extends View {
 
     public void showKeyboard() {
         setVisibility(View.VISIBLE);
+        bringToFront();
     }
 
     public void hideKeyboard() {

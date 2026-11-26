@@ -26,6 +26,60 @@ public class VirtualKeyboardProfileManager {
     public static final String DEFAULT_PROFILE_ID = "default";
     public static final String DEFAULT_PROFILE_NAME = "Default Layout";
 
+    public static final String MOUSE_MODE_TOUCHPAD = "touchpad";
+    public static final String MOUSE_MODE_DIRECT = "direct";
+
+    public static class SubLayout {
+        public String id;
+        public String name;
+        public String mouseInputMode = MOUSE_MODE_TOUCHPAD;
+        public List<VirtualKey> keys;
+
+        public SubLayout(String id, String name, List<VirtualKey> keys) {
+            this(id, name, MOUSE_MODE_TOUCHPAD, keys);
+        }
+
+        public SubLayout(String id, String name, String mouseInputMode, List<VirtualKey> keys) {
+            this.id = id;
+            this.name = name;
+            this.mouseInputMode = MOUSE_MODE_DIRECT.equals(mouseInputMode) ? MOUSE_MODE_DIRECT : MOUSE_MODE_TOUCHPAD;
+            this.keys = keys != null ? keys : new ArrayList<VirtualKey>();
+        }
+    }
+
+    public static class LayoutPackData {
+        public String packId;
+        public int bgOpacity = 100;
+        public String activeSubLayoutId;
+        public List<SubLayout> subLayouts = new ArrayList<>();
+
+        public LayoutPackData(String packId) {
+            this.packId = packId;
+        }
+
+        public SubLayout findSubLayout(String subId) {
+            if (subId == null) return null;
+            for (SubLayout s : subLayouts) {
+                if (subId.equals(s.id)) return s;
+            }
+            return null;
+        }
+
+        public SubLayout getActiveOrFirstSubLayout() {
+            SubLayout found = findSubLayout(activeSubLayoutId);
+            if (found != null) return found;
+            return subLayouts.isEmpty() ? null : subLayouts.get(0);
+        }
+
+        public int getTotalKeyCount() {
+            int total = 0;
+            for (SubLayout s : subLayouts) {
+                if (s.keys != null) total += s.keys.size();
+            }
+            return total;
+        }
+    }
+
     public static class LayoutProfileInfo {
         public String id;
         public String name;
@@ -181,14 +235,15 @@ public class VirtualKeyboardProfileManager {
         return loadProfile(context, activeId);
     }
 
-    public static synchronized List<VirtualKey> loadProfile(Context context, String layoutId) {
-        if (layoutId == null || layoutId.trim().isEmpty()) {
-            return new ArrayList<>();
+    public static synchronized LayoutPackData loadPack(Context context, String packId) {
+        LayoutPackData pack = new LayoutPackData(packId);
+        if (packId == null || packId.trim().isEmpty()) {
+            return pack;
         }
         ensureInitialized(context);
-        File file = getLayoutFile(context, layoutId);
+        File file = getLayoutFile(context, packId);
         if (!file.exists()) {
-            return new ArrayList<>();
+            return pack;
         }
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
@@ -199,27 +254,47 @@ public class VirtualKeyboardProfileManager {
             }
 
             JSONObject root = new JSONObject(sb.toString());
-            String keysJson = root.optString("keys", "");
-            return parseJsonToKeys(keysJson, context);
+            pack.bgOpacity = root.optInt("bgOpacity", 100);
+            pack.activeSubLayoutId = root.optString("activeSubLayoutId", null);
+
+            if (root.has("subLayouts")) {
+                JSONArray arr = root.optJSONArray("subLayouts");
+                if (arr != null) {
+                    for (int i = 0; i < arr.length(); i++) {
+                        JSONObject subObj = arr.optJSONObject(i);
+                        if (subObj == null) continue;
+                        String subId = subObj.optString("id", "sub_" + (i + 1));
+                        String subName = subObj.optString("name", "Layout " + (i + 1));
+                        String mouseMode = subObj.optString("mouseInputMode", MOUSE_MODE_TOUCHPAD);
+                        String keysStr = subObj.optString("keys", "[]");
+                        List<VirtualKey> keys = parseJsonToKeys(keysStr, context);
+                        pack.subLayouts.add(new SubLayout(subId, subName, mouseMode, keys));
+                    }
+                }
+            } else if (root.has("keys")) {
+                // Backward compatibility: migrate v1 single-key-list layout into 1 sub-layout
+                String keysJson = root.optString("keys", "");
+                List<VirtualKey> keys = parseJsonToKeys(keysJson, context);
+                if (!keys.isEmpty()) {
+                    String subId = "sub_main";
+                    pack.subLayouts.add(new SubLayout(subId, "Layout 1", keys));
+                    pack.activeSubLayoutId = subId;
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new ArrayList<>();
+        return pack;
     }
 
-    public static synchronized void saveProfile(Context context, List<VirtualKey> keys) {
-        saveProfile(context, getActiveProfileId(context), keys);
-    }
+    public static synchronized void savePack(Context context, LayoutPackData pack) {
+        if (pack == null || pack.packId == null) return;
+        savePackInternal(context, pack);
 
-    public static synchronized void saveProfile(Context context, String layoutId, List<VirtualKey> keys) {
-        int opacity = getBackgroundOpacity(context, layoutId);
-        saveProfileInternal(context, layoutId, keys, opacity);
-
-        // Update keyCount & timestamp in index
         List<LayoutProfileInfo> profiles = getProfiles(context);
         for (LayoutProfileInfo p : profiles) {
-            if (p.id.equals(layoutId)) {
-                p.keyCount = keys.size();
+            if (p.id.equals(pack.packId)) {
+                p.keyCount = pack.getTotalKeyCount();
                 p.lastModified = System.currentTimeMillis();
                 break;
             }
@@ -227,29 +302,67 @@ public class VirtualKeyboardProfileManager {
         saveProfilesIndex(context, profiles);
     }
 
-    private static synchronized void saveProfileInternal(Context context, String layoutId, List<VirtualKey> keys, int bgOpacity) {
-        File file = getLayoutFile(context, layoutId);
+    private static synchronized void savePackInternal(Context context, LayoutPackData pack) {
+        File file = getLayoutFile(context, pack.packId);
         try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
             JSONObject root = new JSONObject();
-            root.put("id", layoutId);
-            root.put("bgOpacity", bgOpacity);
-            root.put("keys", keysToJson(keys));
+            root.put("id", pack.packId);
+            root.put("version", 2);
+            root.put("bgOpacity", pack.bgOpacity);
+            if (pack.activeSubLayoutId != null) {
+                root.put("activeSubLayoutId", pack.activeSubLayoutId);
+            }
+            JSONArray subArr = new JSONArray();
+            for (SubLayout s : pack.subLayouts) {
+                JSONObject subObj = new JSONObject();
+                subObj.put("id", s.id);
+                subObj.put("name", s.name);
+                subObj.put("mouseInputMode", s.mouseInputMode != null ? s.mouseInputMode : MOUSE_MODE_TOUCHPAD);
+                subObj.put("keys", keysToJson(s.keys));
+                subArr.put(subObj);
+            }
+            root.put("subLayouts", subArr);
             writer.write(root.toString(2));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    public static synchronized List<VirtualKey> loadProfile(Context context, String layoutId) {
+        LayoutPackData pack = loadPack(context, layoutId);
+        SubLayout active = pack.getActiveOrFirstSubLayout();
+        return active != null ? active.keys : new ArrayList<VirtualKey>();
+    }
+
+    public static synchronized void saveProfile(Context context, List<VirtualKey> keys) {
+        saveProfile(context, getActiveProfileId(context), keys);
+    }
+
+    public static synchronized void saveProfile(Context context, String layoutId, List<VirtualKey> keys) {
+        LayoutPackData pack = loadPack(context, layoutId);
+        SubLayout active = pack.getActiveOrFirstSubLayout();
+        if (active != null) {
+            active.keys = keys != null ? keys : new ArrayList<VirtualKey>();
+        } else if (keys != null && !keys.isEmpty()) {
+            String subId = "sub_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+            pack.subLayouts.add(new SubLayout(subId, "Layout 1", keys));
+            pack.activeSubLayoutId = subId;
+        }
+        savePack(context, pack);
+    }
+
     public static synchronized LayoutProfileInfo createProfile(Context context, String name, List<VirtualKey> initialKeys) {
         ensureInitialized(context);
         String id = "layout_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
-        if (initialKeys == null) {
-            initialKeys = new ArrayList<>();
+        LayoutPackData pack = new LayoutPackData(id);
+        if (initialKeys != null && !initialKeys.isEmpty()) {
+            String subId = "sub_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+            pack.subLayouts.add(new SubLayout(subId, "Layout 1", initialKeys));
+            pack.activeSubLayoutId = subId;
         }
+        savePackInternal(context, pack);
 
-        saveProfileInternal(context, id, initialKeys, 100);
-
-        LayoutProfileInfo info = new LayoutProfileInfo(id, name, false, initialKeys.size(), System.currentTimeMillis());
+        LayoutProfileInfo info = new LayoutProfileInfo(id, name, false, pack.getTotalKeyCount(), System.currentTimeMillis());
         List<LayoutProfileInfo> profiles = getProfiles(context);
         profiles.add(info);
         saveProfilesIndex(context, profiles);
@@ -258,8 +371,17 @@ public class VirtualKeyboardProfileManager {
     }
 
     public static synchronized LayoutProfileInfo duplicateProfile(Context context, String sourceId, String newName) {
-        List<VirtualKey> keys = loadProfile(context, sourceId);
-        LayoutProfileInfo newProfile = createProfile(context, newName, keys);
+        LayoutPackData srcPack = loadPack(context, sourceId);
+        LayoutProfileInfo newProfile = createProfile(context, newName, null);
+
+        LayoutPackData destPack = new LayoutPackData(newProfile.id);
+        destPack.bgOpacity = srcPack.bgOpacity;
+        destPack.activeSubLayoutId = srcPack.activeSubLayoutId;
+        for (SubLayout s : srcPack.subLayouts) {
+            List<VirtualKey> clonedKeys = parseJsonToKeys(keysToJson(s.keys), context);
+            destPack.subLayouts.add(new SubLayout(s.id, s.name, s.mouseInputMode, clonedKeys));
+        }
+        savePack(context, destPack);
 
         // Duplicate background image if exists
         File srcBg = getBackgroundImageFile(context, sourceId);
@@ -276,9 +398,6 @@ public class VirtualKeyboardProfileManager {
                 e.printStackTrace();
             }
         }
-
-        int opacity = getBackgroundOpacity(context, sourceId);
-        saveBackgroundOpacity(context, newProfile.id, opacity);
 
         return newProfile;
     }
@@ -331,9 +450,10 @@ public class VirtualKeyboardProfileManager {
     }
 
     public static synchronized void resetProfile(Context context, String layoutId) {
-        saveProfile(context, layoutId, new ArrayList<VirtualKey>());
+        LayoutPackData emptyPack = new LayoutPackData(layoutId);
+        emptyPack.bgOpacity = 100;
+        savePack(context, emptyPack);
         clearBackgroundImage(context, layoutId);
-        saveBackgroundOpacity(context, layoutId, 100);
     }
 
     public static synchronized void resetProfile(Context context) {
@@ -341,19 +461,7 @@ public class VirtualKeyboardProfileManager {
     }
 
     public static synchronized int getBackgroundOpacity(Context context, String layoutId) {
-        File file = getLayoutFile(context, layoutId);
-        if (file.exists()) {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line).append("\n");
-                }
-                JSONObject root = new JSONObject(sb.toString());
-                return root.optInt("bgOpacity", 100);
-            } catch (Exception ignored) {}
-        }
-        return 100;
+        return loadPack(context, layoutId).bgOpacity;
     }
 
     public static synchronized int getBackgroundOpacity(Context context) {
@@ -361,8 +469,9 @@ public class VirtualKeyboardProfileManager {
     }
 
     public static synchronized void saveBackgroundOpacity(Context context, String layoutId, int opacity) {
-        List<VirtualKey> keys = loadProfile(context, layoutId);
-        saveProfileInternal(context, layoutId, keys, opacity);
+        LayoutPackData pack = loadPack(context, layoutId);
+        pack.bgOpacity = opacity;
+        savePackInternal(context, pack);
     }
 
     public static synchronized void saveBackgroundOpacity(Context context, int opacity) {
@@ -391,17 +500,29 @@ public class VirtualKeyboardProfileManager {
 
     public static synchronized String exportProfileToJson(Context context, String layoutId) {
         LayoutProfileInfo info = getProfileInfo(context, layoutId);
-        List<VirtualKey> keys = loadProfile(context, layoutId);
+        LayoutPackData pack = loadPack(context, layoutId);
         try {
             JSONObject root = new JSONObject();
             root.put("version", 2);
             root.put("name", info != null ? info.name : "Exported Layout");
-            root.put("bgOpacity", getBackgroundOpacity(context, layoutId));
-            root.put("keys", keysToJson(keys));
+            root.put("bgOpacity", pack.bgOpacity);
+            if (pack.activeSubLayoutId != null) {
+                root.put("activeSubLayoutId", pack.activeSubLayoutId);
+            }
+            JSONArray subArr = new JSONArray();
+            for (SubLayout s : pack.subLayouts) {
+                JSONObject subObj = new JSONObject();
+                subObj.put("id", s.id);
+                subObj.put("name", s.name);
+                subObj.put("mouseInputMode", s.mouseInputMode != null ? s.mouseInputMode : MOUSE_MODE_TOUCHPAD);
+                subObj.put("keys", keysToJson(s.keys));
+                subArr.put(subObj);
+            }
+            root.put("subLayouts", subArr);
             return root.toString(2);
         } catch (Exception e) {
             e.printStackTrace();
-            return keysToJson(keys);
+            return "[]";
         }
     }
 
@@ -410,26 +531,49 @@ public class VirtualKeyboardProfileManager {
         try {
             String name = customName;
             int bgOpacity = 100;
-            List<VirtualKey> keys;
+            LayoutProfileInfo profile = createProfile(context,
+                    (name != null && !name.trim().isEmpty()) ? name.trim() : "Imported Layout", null);
+            LayoutPackData pack = new LayoutPackData(profile.id);
 
             if (jsonStr.trim().startsWith("{")) {
                 JSONObject root = new JSONObject(jsonStr);
                 if (name == null || name.trim().isEmpty()) {
-                    name = root.optString("name", "Imported Layout");
+                    renameProfile(context, profile.id, root.optString("name", "Imported Layout"));
                 }
                 bgOpacity = root.optInt("bgOpacity", 100);
-                String keysStr = root.optString("keys", "");
-                keys = parseJsonToKeys(keysStr, context);
-            } else {
-                if (name == null || name.trim().isEmpty()) {
-                    name = "Imported Layout";
+                pack.bgOpacity = bgOpacity;
+                pack.activeSubLayoutId = root.optString("activeSubLayoutId", null);
+
+                if (root.has("subLayouts")) {
+                    JSONArray arr = root.optJSONArray("subLayouts");
+                    if (arr != null) {
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject subObj = arr.optJSONObject(i);
+                            if (subObj == null) continue;
+                            String subId = subObj.optString("id", "sub_" + (i + 1));
+                            String subName = subObj.optString("name", "Layout " + (i + 1));
+                            String mouseMode = subObj.optString("mouseInputMode", MOUSE_MODE_TOUCHPAD);
+                            List<VirtualKey> keys = parseJsonToKeys(subObj.optString("keys", "[]"), context);
+                            pack.subLayouts.add(new SubLayout(subId, subName, mouseMode, keys));
+                        }
+                    }
+                } else {
+                    List<VirtualKey> keys = parseJsonToKeys(root.optString("keys", ""), context);
+                    if (!keys.isEmpty()) {
+                        pack.subLayouts.add(new SubLayout("sub_main", "Layout 1", keys));
+                        pack.activeSubLayoutId = "sub_main";
+                    }
                 }
-                keys = parseJsonToKeys(jsonStr, context);
+            } else {
+                List<VirtualKey> keys = parseJsonToKeys(jsonStr, context);
+                if (!keys.isEmpty()) {
+                    pack.subLayouts.add(new SubLayout("sub_main", "Layout 1", keys));
+                    pack.activeSubLayoutId = "sub_main";
+                }
             }
 
-            LayoutProfileInfo profile = createProfile(context, name, keys);
-            saveBackgroundOpacity(context, profile.id, bgOpacity);
-            return profile;
+            savePack(context, pack);
+            return getProfileInfo(context, profile.id);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -469,6 +613,10 @@ public class VirtualKeyboardProfileManager {
                 key.absorbTouch = obj.optBoolean("absorbTouch", true);
                 key.isBlockTouch = obj.optBoolean("isBlockTouch", false);
                 key.switchInputModeOnToggle = obj.optBoolean("switchInputModeOnToggle", false);
+                key.changeLayout = obj.optBoolean("changeLayout", false);
+                key.targetSubLayoutId = (obj.has("targetSubLayoutId") && !obj.isNull("targetSubLayoutId"))
+                        ? obj.optString("targetSubLayoutId", null) : null;
+                key.lockSquare = obj.optBoolean("lockSquare", false);
                 boolean isScroll = obj.optBoolean("isScroll", false);
                 if (isScroll) {
                     continue;
@@ -513,6 +661,11 @@ public class VirtualKeyboardProfileManager {
                 obj.put("absorbTouch", k.absorbTouch);
                 obj.put("isBlockTouch", k.isBlockTouch);
                 obj.put("switchInputModeOnToggle", k.switchInputModeOnToggle);
+                obj.put("changeLayout", k.changeLayout);
+                if (k.targetSubLayoutId != null) {
+                    obj.put("targetSubLayoutId", k.targetSubLayoutId);
+                }
+                obj.put("lockSquare", k.lockSquare);
                 obj.put("isJoystick", k.isJoystick);
                 obj.put("isScroll", k.isScroll);
                 obj.put("codeUp", k.codeUp);

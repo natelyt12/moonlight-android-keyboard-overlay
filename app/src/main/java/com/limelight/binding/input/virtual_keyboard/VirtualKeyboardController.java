@@ -35,7 +35,9 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
     private int vibrationDuration = 20;
     private PcKeyboardOverlayView pcKeyboardOverlay = null;
     private VirtualMouseOverlayView mouseOverlay = null;
-    private InStreamMenuOverlayView inStreamMenuOverlay = null;
+    private VirtualKeyboardProfileManager.LayoutPackData currentPack = null;
+    private VirtualKeyboardProfileManager.SubLayout currentSubLayout = null;
+    private android.widget.TextView layoutFlashLabel = null;
 
     private final Handler comboHandler = new Handler(Looper.getMainLooper());
     private final Map<String, List<Runnable>> pendingComboTasks = new HashMap<>();
@@ -108,35 +110,13 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
 
                 removeElements();
 
-                List<VirtualKey> keys = VirtualKeyboardProfileManager.loadProfile(context);
-                List<VirtualKey> orderedKeys = new ArrayList<>();
-                for (VirtualKey k : keys) {
-                    if (k.isBlockTouch) orderedKeys.add(k);
-                }
-                for (VirtualKey k : keys) {
-                    if (!k.isBlockTouch) orderedKeys.add(k);
-                }
-
-                for (VirtualKey key : orderedKeys) {
-                    VirtualKeyView view = new VirtualKeyView(context, key, VirtualKeyboardController.this);
-                    view.setOpacity(opacity);
-                    view.setHapticEnabled(vibrationEnabled);
-                    view.setVibrationDuration(vibrationDuration);
-                    keyViews.add(view);
-
-                    int x = Math.round(key.relX * width);
-                    int y = Math.round(key.relY * height);
-                    int w = Math.round(key.relWidth * width);
-                    int h = Math.round(key.relHeight * height);
-
-                    FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(w, h);
-                    lp.setMargins(x, y, 0, 0);
-                    parentLayout.addView(view, lp);
-
-                    if (isHidden && !isSpecialFunctionKey(key)) {
-                        view.setVisibility(View.GONE);
-                    }
-                }
+                String activeId = VirtualKeyboardProfileManager.getActiveProfileId(context);
+                currentPack = VirtualKeyboardProfileManager.loadPack(context, activeId);
+                currentSubLayout = currentPack != null ? currentPack.getActiveOrFirstSubLayout() : null;
+                applySubLayoutMouseMode(currentSubLayout);
+                List<VirtualKey> keys = (currentSubLayout != null && currentSubLayout.keys != null)
+                        ? currentSubLayout.keys : new ArrayList<VirtualKey>();
+                renderSubLayoutKeys(keys, width, height);
 
                 if (pcKeyboardOverlay != null) {
                     parentLayout.removeView(pcKeyboardOverlay);
@@ -147,8 +127,8 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
                 pcKeyboardOverlay.setVibrationDuration(vibrationDuration);
                 pcKeyboardOverlay.setVisibility(View.GONE);
 
-                int maxPcW = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 840f, context.getResources().getDisplayMetrics());
-                int pcKbW = Math.min((int) (width * 0.88f), maxPcW);
+                int maxPcW = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 680f, context.getResources().getDisplayMetrics());
+                int pcKbW = Math.min((int) (width * 0.80f), maxPcW);
                 int pcKbH = pcKeyboardOverlay.calculatePerfectHeight(pcKbW);
                 FrameLayout.LayoutParams pcLp = new FrameLayout.LayoutParams(pcKbW, pcKbH);
                 pcLp.leftMargin = (width - pcKbW) / 2;
@@ -164,24 +144,14 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
                 mouseOverlay.setVibrationDuration(vibrationDuration);
                 mouseOverlay.setVisibility(View.GONE);
 
-                int mouseW = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 245f, context.getResources().getDisplayMetrics());
-                int mouseH = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 125f, context.getResources().getDisplayMetrics());
-                mouseW = Math.min(mouseW, (int) (width * 0.45f));
-                mouseH = Math.min(mouseH, (int) (height * 0.45f));
+                int mouseW = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 216f, context.getResources().getDisplayMetrics());
+                int mouseH = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 110f, context.getResources().getDisplayMetrics());
+                mouseW = Math.min(mouseW, (int) (width * 0.42f));
+                mouseH = Math.min(mouseH, (int) (height * 0.42f));
                 FrameLayout.LayoutParams mouseLp = new FrameLayout.LayoutParams(mouseW, mouseH);
                 mouseLp.leftMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20f, context.getResources().getDisplayMetrics());
                 mouseLp.topMargin = Math.max(0, height - mouseH - (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60f, context.getResources().getDisplayMetrics()));
                 parentLayout.addView(mouseOverlay, mouseLp);
-
-                if (inStreamMenuOverlay != null) {
-                    parentLayout.removeView(inStreamMenuOverlay);
-                    inStreamMenuOverlay = null;
-                }
-                if (context instanceof com.limelight.Game) {
-                    inStreamMenuOverlay = new InStreamMenuOverlayView(context, (com.limelight.Game) context, VirtualKeyboardController.this);
-                    FrameLayout.LayoutParams menuLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
-                    parentLayout.addView(inStreamMenuOverlay, menuLp);
-                }
             }
         });
     }
@@ -203,9 +173,6 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
         if (mouseOverlay != null) {
             mouseOverlay.hideOverlay();
         }
-        if (inStreamMenuOverlay != null) {
-            inStreamMenuOverlay.closeMenu();
-        }
         stopActionScroll();
         for (VirtualKeyView v : keyViews) {
             v.clearAllSlidePointers();
@@ -213,8 +180,17 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
         }
     }
 
-    public void removeElements() {
+    private void clearSubLayoutKeyViews() {
         stopActionScroll();
+        for (VirtualKeyView v : keyViews) {
+            v.clearAllSlidePointers();
+            parentLayout.removeView(v);
+        }
+        keyViews.clear();
+    }
+
+    public void removeElements() {
+        clearSubLayoutKeyViews();
         if (pcKeyboardOverlay != null) {
             parentLayout.removeView(pcKeyboardOverlay);
             pcKeyboardOverlay = null;
@@ -223,15 +199,6 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
             parentLayout.removeView(mouseOverlay);
             mouseOverlay = null;
         }
-        if (inStreamMenuOverlay != null) {
-            parentLayout.removeView(inStreamMenuOverlay);
-            inStreamMenuOverlay = null;
-        }
-        for (VirtualKeyView v : keyViews) {
-            v.clearAllSlidePointers();
-            parentLayout.removeView(v);
-        }
-        keyViews.clear();
     }
 
     public void destroy() {
@@ -249,6 +216,105 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
 
     public int getOpacity() {
         return opacity;
+    }
+
+    private void renderSubLayoutKeys(List<VirtualKey> keys, int width, int height) {
+        List<VirtualKey> orderedKeys = new ArrayList<>();
+        for (VirtualKey k : keys) {
+            if (k.isBlockTouch) orderedKeys.add(k);
+        }
+        for (VirtualKey k : keys) {
+            if (!k.isBlockTouch) orderedKeys.add(k);
+        }
+
+        for (VirtualKey key : orderedKeys) {
+            VirtualKeyView view = new VirtualKeyView(context, key, VirtualKeyboardController.this);
+            view.setOpacity(opacity);
+            view.setHapticEnabled(vibrationEnabled);
+            view.setVibrationDuration(vibrationDuration);
+            keyViews.add(view);
+
+            int x = Math.round(key.relX * width);
+            int y = Math.round(key.relY * height);
+            int w = Math.round(key.relWidth * width);
+            int h = Math.round(key.relHeight * height);
+
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(w, h);
+            lp.setMargins(x, y, 0, 0);
+            parentLayout.addView(view, lp);
+
+            if (isHidden && !isSpecialFunctionKey(key)) {
+                view.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private void applySubLayoutMouseMode(VirtualKeyboardProfileManager.SubLayout sub) {
+        if (sub == null) return;
+        if (context instanceof com.limelight.Game) {
+            boolean useTouchpad = !VirtualKeyboardProfileManager.MOUSE_MODE_DIRECT.equals(sub.mouseInputMode);
+            ((com.limelight.Game) context).setTouchscreenTrackpad(useTouchpad);
+        }
+    }
+
+    public void switchToSubLayout(String subLayoutId) {
+        if (currentPack == null || subLayoutId == null) return;
+        VirtualKeyboardProfileManager.SubLayout target = currentPack.findSubLayout(subLayoutId);
+        if (target == null || target == currentSubLayout) return;
+
+        int width = parentLayout.getWidth();
+        int height = parentLayout.getHeight();
+        if (width <= 0 || height <= 0) return;
+
+        currentSubLayout = target;
+        isHidden = false;
+        clearSubLayoutKeyViews();
+        List<VirtualKey> keys = target.keys != null ? target.keys : new ArrayList<VirtualKey>();
+        renderSubLayoutKeys(keys, width, height);
+        if (pcKeyboardOverlay != null) {
+            pcKeyboardOverlay.bringToFront();
+        }
+        if (mouseOverlay != null) {
+            mouseOverlay.bringToFront();
+        }
+        applySubLayoutMouseMode(target);
+        flashLayoutName(target.name);
+    }
+
+    private void flashLayoutName(String layoutName) {
+        if (parentLayout == null || layoutName == null) return;
+        if (layoutFlashLabel == null) {
+            layoutFlashLabel = new android.widget.TextView(context);
+            layoutFlashLabel.setTextColor(0xFFE6EDF3);
+            layoutFlashLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            layoutFlashLabel.setShadowLayer(4f, 0f, 1f, 0xCC000000);
+            layoutFlashLabel.setClickable(false);
+            layoutFlashLabel.setFocusable(false);
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    android.view.Gravity.BOTTOM | android.view.Gravity.CENTER_HORIZONTAL);
+            lp.bottomMargin = Math.round(TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP, 18f, context.getResources().getDisplayMetrics()));
+            parentLayout.addView(layoutFlashLabel, lp);
+        }
+        layoutFlashLabel.animate().cancel();
+        layoutFlashLabel.setText("Currently on layout: " + layoutName);
+        layoutFlashLabel.setAlpha(1f);
+        layoutFlashLabel.setVisibility(View.VISIBLE);
+        layoutFlashLabel.bringToFront();
+        layoutFlashLabel.animate()
+                .alpha(0f)
+                .setDuration(1000)
+                .withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (layoutFlashLabel != null) {
+                            layoutFlashLabel.setVisibility(View.GONE);
+                        }
+                    }
+                })
+                .start();
     }
 
     public void toggleKeysVisibility(VirtualKey sourceKey) {
@@ -279,16 +345,6 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
         if (mouseOverlay != null) {
             mouseOverlay.toggleOverlay();
         }
-    }
-
-    public void toggleInStreamMenu() {
-        if (inStreamMenuOverlay != null) {
-            inStreamMenuOverlay.toggleMenu();
-        }
-    }
-
-    public boolean isMenuOpen() {
-        return inStreamMenuOverlay != null && inStreamMenuOverlay.isMenuOpen();
     }
 
     private byte getModifierMask() {
@@ -415,7 +471,9 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
         }
 
         if (key.type == VirtualKey.KeyType.KEYBOARD) {
-            if (key.extraCode1 == 0 && key.extraCode2 == 0 && key.extraCode3 == 0) {
+            if (key.code == 0 && key.extraCode1 == 0 && key.extraCode2 == 0 && key.extraCode3 == 0) {
+                // Layout-switch-only key with no keyboard binding
+            } else if (key.extraCode1 == 0 && key.extraCode2 == 0 && key.extraCode3 == 0) {
                 sendSingleKeyDown(key.code);
             } else {
                 handleComboKeyDown(key);
@@ -465,9 +523,14 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
                     }
                 };
                 scrollActionHandler.postDelayed(activeScrollActionRunnable, 250);
-            } else if (key.code == VirtualKey.ACTION_CODE_TOGGLE_STREAM_MENU) {
-                toggleInStreamMenu();
             }
+        }
+
+        if (key.changeLayout && key.targetSubLayoutId != null) {
+            if (key.type == VirtualKey.KeyType.KEYBOARD || key.type == VirtualKey.KeyType.MOUSE_BUTTON) {
+                onKeyUp(key);
+            }
+            switchToSubLayout(key.targetSubLayoutId);
         }
     }
 
@@ -478,7 +541,9 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
         }
 
         if (key.type == VirtualKey.KeyType.KEYBOARD) {
-            if (key.extraCode1 == 0 && key.extraCode2 == 0 && key.extraCode3 == 0) {
+            if (key.code == 0 && key.extraCode1 == 0 && key.extraCode2 == 0 && key.extraCode3 == 0) {
+                // Layout-switch-only key with no keyboard binding
+            } else if (key.extraCode1 == 0 && key.extraCode2 == 0 && key.extraCode3 == 0) {
                 sendSingleKeyUp(key.code);
             } else {
                 handleComboKeyUp(key);
@@ -535,9 +600,9 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
         int pointerCount = event.getPointerCount();
 
         if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-            for (VirtualKeyView v : keyViews) {
+            for (VirtualKeyView v : new ArrayList<>(keyViews)) {
                 if (isStreamDrivenKey(v.getKey())) {
-                    v.clearAllSlidePointers();
+                    v.clearSlidePointersForSource(sourceView);
                 }
             }
             return false;
@@ -569,9 +634,12 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
         }
 
         boolean shouldAbsorbTouch = false;
+        VirtualKeyboardProfileManager.SubLayout subLayoutAtStart = currentSubLayout;
 
         for (int p = 0; p < pointerCount; p++) {
+            if (currentSubLayout != subLayoutAtStart) break;
             int pointerId = event.getPointerId(p);
+            long pointerKey = VirtualKeyView.makePointerKey(sourceView, pointerId);
             float screenX = sourceLoc[0] + event.getX(p);
             float screenY = sourceLoc[1] + event.getY(p);
 
@@ -579,34 +647,33 @@ public class VirtualKeyboardController implements VirtualKeyView.KeyActionListen
             boolean isPointerArriving = (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN)
                     && p == actionIndex;
 
-            for (VirtualKeyView v : keyViews) {
+            for (VirtualKeyView v : new ArrayList<>(keyViews)) {
+                if (currentSubLayout != subLayoutAtStart) break;
                 VirtualKey k = v.getKey();
                 if (!isStreamDrivenKey(k)) continue;
 
                 if (isPointerLeaving) {
-                    v.clearPointerDownInside(pointerId);
-                    v.onSlidePointerExit(pointerId);
+                    v.onSlidePointerExit(pointerKey, true);
                     continue;
                 }
 
                 if (isPointerArriving && v.containsScreenPoint(screenX, screenY)) {
-                    v.markPointerDownInside(pointerId);
+                    v.markPointerDownInside(pointerKey);
                 }
 
                 // Slide keys fire as soon as a finger enters them. Plain pass-through keys
                 // (Absorb Touch disabled) only fire for fingers that landed on them first, so
                 // dragging the camera across the screen never presses them by accident.
-                boolean eligible = k.isSlide || v.isPointerDownInside(pointerId);
+                boolean eligible = k.isSlide || v.isPointerDownInside(pointerKey);
 
                 if (eligible && v.containsScreenPoint(screenX, screenY)) {
-                    v.onSlidePointerEnter(pointerId);
+                    v.onSlidePointerEnter(pointerKey);
                     if (k.absorbTouch) {
                         shouldAbsorbTouch = true;
                     }
                 } else {
-                    if (!k.holdOutside) {
-                        v.onSlidePointerExit(pointerId);
-                    } else if (v.activeSlidePointers.contains(pointerId) && k.absorbTouch) {
+                    v.onSlidePointerExit(pointerKey, false);
+                    if (v.activeSlidePointers.contains(pointerKey) && k.absorbTouch) {
                         shouldAbsorbTouch = true;
                     }
                 }

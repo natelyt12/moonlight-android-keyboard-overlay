@@ -11,41 +11,44 @@ This repository is a customized fork of [Moonlight for Android](https://github.c
 
 ## 📱 Screenshots
 
-|                          In-game virtual overlay                           |                       Full PC keyboard overlay                        |
-| :------------------------------------------------------------------------: | :-------------------------------------------------------------------: |
-| ![In-game virtual overlay](docs/screenshots/01-ingame-virtual-overlay.jpg) | ![Full PC keyboard overlay](docs/screenshots/02-full-pc-keyboard.jpg) |
+|                       Layout Packs Manager                       |                       Layout Editor Sidebar                        |
+| :--------------------------------------------------------------: | :----------------------------------------------------------------: |
+| ![Layout Packs Manager](docs/screenshots/layout-pack-menu.jpg)   | ![Layout Editor Sidebar](docs/screenshots/main-sidebar.jpg)        |
 
-|                       Virtual key editor                        |                          Key behavior options                          |
-| :-------------------------------------------------------------: | :--------------------------------------------------------------------: |
-| ![Virtual key editor](docs/screenshots/03-key-editor-panel.jpg) | ![Key behavior options](docs/screenshots/04-key-behavior-settings.jpg) |
+|                       Button Key & Layout Switch                       |                 Button Size, Style & Touch Behaviors                 |
+| :--------------------------------------------------------------------: | :------------------------------------------------------------------: |
+| ![Button Key & Layout Switch](docs/screenshots/button-config-sidebar.jpg) | ![Button Size, Style & Touch Behaviors](docs/screenshots/button-config-sidebar-2.jpg) |
 
-|          Layout menu & preview background           |
-| :-------------------------------------------------: |
-| ![Layout menu](docs/screenshots/05-layout-menu.jpg) |
+|                  Adaptive Left/Right Button Inspector                  |                             Preview Mode                             |
+| :--------------------------------------------------------------------: | :------------------------------------------------------------------: |
+| ![Adaptive Left/Right Button Inspector](docs/screenshots/button-config-sidebar-3.jpg) | ![Preview Mode](docs/screenshots/preview-layout.jpg)                 |
 
-> **Note:** The application does not come with the controller shown in the images.
+> **Note:** The application does not come with any pre-bundled game layouts shown in the screenshots.
 
 ---
 
-## ✨ Features in this Fork
+## ✨ What's New & Features in v2
 
-- **Customizable Virtual Keyboard Overlay**: Create and place on-screen keys anywhere on the display with custom size, text, opacity, and haptic feedback.
-- **Visual Layout Editor**: Drag, drop, resize, and configure virtual keys in real time, using an in-game screenshot as the preview background.
-- **Layout Profile Management**:
-  - Create, duplicate, and switch between layout profiles tailored for different games.
-  - **Import / Export** layouts seamlessly via JSON files or directly through the clipboard.
-- **Advanced Key Behaviors**:
-  - Single key presses, toggle locks (caps/run/crouch lock), and multi-key combos / macros.
-  - Slide gestures between keys for fluid touchscreen movement.
-- **Full PC Keyboard Overlay**: Quickly toggle a full-size PC keyboard during a stream for typing, cheats, and function keys (F1–F12).
-- **Virtual Mouse & Scroll Control**:
-  - Virtual mouse overlay with left, right, and middle click buttons.
+- **Layout Packs & Sub-Layouts** ([Read the full guide](docs/LAYOUT_PACKS.md)):
+  - Organize multiple **Sub-layouts** (e.g., *Combat*, *Inventory*, *Driving*, *Menu*) inside a single **Layout Pack** per game.
+  - Set an **Active Layout** as the default on stream launch and bind **Change layout** on any button (even with `Key: None`) to switch layers on the fly.
+  - Choose **Mouse Input Mode** (**Touchpad** or **Direct** Windows multi-touch) independently per sub-layout.
+  - **Import / Export** full v2 packs via JSON file or clipboard, with backward compatibility for v1 JSON layouts.
+- **Minimalist Dark Layout Editor**:
+  - **Smart Edge & Center Alignment Guides** with `1px` slider precision.
+  - **Lock 1:1 (Square)** sizing and **Corner Radius (0–100%)** control.
+  - **0–4 Key Combo Picker** alongside Mouse and Action bindings.
+  - **Temporary Menu Side Swap (`⇄`)** and an adaptive button inspector.
+  - **Stream-Accurate Preview Mode** supporting multi-touch, sub-layout switching, and live PC Keyboard / Mouse overlays.
+- **Isolated Multi-Touch & Redesigned D-Pad**:
+  - Independent per-finger pointer tracking across D-Pad, `Slide`, `Keep hover outside button`, and `StreamView` pass-through.
+  - Redesigned D-Pad with a clean directional arc indicator.
+- **Compact Zero-Gap PC Keyboard & Mouse Overlays**:
+  - Edge-to-edge zero-gap, square-cornered key tiles for maximum tap area in a compact footprint, highlighted with your device's dynamic accent color.
   - Adjustable mouse sensitivity and two-finger scroll speed.
-- **Direct Windows Multi-Touch**: Pass native multi-touch gestures directly to the Windows host when trackpad mode is disabled.
-- **In-Stream Quick Menu**: A convenient floating overlay menu to switch layouts, toggle the mouse/keyboard layers, or adjust settings on the fly.
 
 > [!NOTE]
-> **Differences from upstream**: To streamline touch keyboard and mouse gameplay, legacy USB gamepad drivers and the default on-screen gamepad controls (analog sticks and D-pad) have been removed in this fork.
+> **Differences from upstream**: To streamline touch keyboard and mouse gameplay, legacy USB gamepad drivers and the default on-screen gamepad controls have been removed in this fork.
 
 ---
 
@@ -127,8 +130,8 @@ The signed APK is written to `app/build/outputs/apk/nonRoot/release/`.
 Then publish a build:
 
 ```bash
-git tag v1.0
-git push origin v1.0
+git tag v2.0
+git push origin v2.0
 ```
 
 The workflow uploads `MoonlightKB-<version>-nonRoot.apk` plus `SHA256SUMS.txt` and verifies the APK signature before publishing.

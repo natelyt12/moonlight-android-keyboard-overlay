@@ -96,12 +96,14 @@ public class VirtualMouseOverlayView extends View {
     private static final int COLOR_OVERLAY_BORDER = 0x2EFFFFFF;
     private static final int COLOR_KEY_BG = 0x59232931;
     private static final int COLOR_KEY_BORDER = 0x22FFFFFF;
-    private static final int COLOR_KEY_PRESSED = 0xE600B4D8;
     private static final int COLOR_CLOSE_BG = 0x59D90429;
+
+    private final int colorKeyPressed;
 
     public VirtualMouseOverlayView(Context context, NvConnection conn) {
         super(context);
         this.conn = conn;
+        this.colorKeyPressed = VkThemeColors.withAlpha(VkThemeColors.getAccentColor(context), 0xE6);
 
         setFocusable(false);
         setClickable(true);
@@ -195,16 +197,16 @@ public class VirtualMouseOverlayView extends View {
     private void layoutOverlay(int width, int height) {
         if (width <= 0 || height <= 0) return;
 
-        float padH = dpToPx(7f);
-        float padV = dpToPx(4f);
-        float gap = dpToPx(3f);
-        float dragBarH = dpToPx(16f);
+        float padH = dpToPx(4f);
+        float padV = dpToPx(3f);
+        float gap = 0f;
+        float dragBarH = dpToPx(14f);
 
         dragBarRect.set(padH, padV, width - padH, padV + dragBarH);
 
         // Close button in the top-right of the thin drag strip
-        float closeW = dpToPx(26f);
-        float closeH = dpToPx(14f);
+        float closeW = dpToPx(24f);
+        float closeH = dpToPx(12f);
         float closeTop = padV + (dragBarH - closeH) / 2f;
         closeRect.set(width - padH - closeW, closeTop, width - padH, closeTop + closeH);
         dragBarRect.right = Math.max(dragBarRect.left, closeRect.left - dpToPx(4f));
@@ -217,7 +219,7 @@ public class VirtualMouseOverlayView extends View {
         float r2Y = r1Y + r1Height + gap;
 
         // Left column: 2 distinct Scroll Buttons [▲ Scroll Up] and [▼ Scroll Down]
-        float scrollW = dpToPx(40f);
+        float scrollW = dpToPx(38f);
         scrollUpRect.set(padH, r1Y, padH + scrollW, r1Y + r1Height);
         scrollDownRect.set(padH, r2Y, padH + scrollW, r2Y + r2Height);
 
@@ -241,8 +243,8 @@ public class VirtualMouseOverlayView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        float cornerRadius = dpToPx(12f);
-        float keyCornerRadius = dpToPx(5f);
+        float cornerRadius = dpToPx(6f);
+        float keyCornerRadius = 0f;
 
         // 1. Flat translucent container (~70% opaque, matching the keyboard overlay)
         RectF outerRect = new RectF(dpToPx(1f), dpToPx(1f), getWidth() - dpToPx(1f), getHeight() - dpToPx(1f));
@@ -280,15 +282,17 @@ public class VirtualMouseOverlayView extends View {
 
     private void drawScrollButton(Canvas canvas, RectF rect, String arrow, String sub, boolean isPressed, float cornerRadius) {
         if (isPressed) {
-            keyBgPaint.setColor(COLOR_KEY_PRESSED);
+            keyBgPaint.setColor(colorKeyPressed);
             keyBorderPaint.setColor(0xFFFFFFFF);
+            keyBorderPaint.setStrokeWidth(dpToPx(1.5f));
         } else {
             keyBgPaint.setColor(COLOR_KEY_BG);
             keyBorderPaint.setColor(COLOR_KEY_BORDER);
+            keyBorderPaint.setStrokeWidth(Math.max(1f, dpToPx(0.75f)));
         }
 
-        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, keyBgPaint);
-        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, keyBorderPaint);
+        canvas.drawRect(rect, keyBgPaint);
+        canvas.drawRect(rect, keyBorderPaint);
 
         float centerY = rect.centerY() - dpToPx(4f);
         textPaint.setTextSize(dpToPx(13f));
@@ -302,15 +306,17 @@ public class VirtualMouseOverlayView extends View {
         boolean isPressed = pressedButtons.contains(btn);
 
         if (isPressed) {
-            keyBgPaint.setColor(COLOR_KEY_PRESSED);
+            keyBgPaint.setColor(colorKeyPressed);
             keyBorderPaint.setColor(0xFFFFFFFF);
+            keyBorderPaint.setStrokeWidth(dpToPx(1.5f));
         } else {
             keyBgPaint.setColor(COLOR_KEY_BG);
             keyBorderPaint.setColor(COLOR_KEY_BORDER);
+            keyBorderPaint.setStrokeWidth(Math.max(1f, dpToPx(0.75f)));
         }
 
-        canvas.drawRoundRect(btn.rect, cornerRadius, cornerRadius, keyBgPaint);
-        canvas.drawRoundRect(btn.rect, cornerRadius, cornerRadius, keyBorderPaint);
+        canvas.drawRect(btn.rect, keyBgPaint);
+        canvas.drawRect(btn.rect, keyBorderPaint);
 
         float w = btn.rect.width();
         float h = btn.rect.height();

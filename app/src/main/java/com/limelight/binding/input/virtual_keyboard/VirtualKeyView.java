@@ -1,5 +1,6 @@
 package com.limelight.binding.input.virtual_keyboard;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -17,6 +18,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 
 @SuppressLint("ViewConstructor")
 public class VirtualKeyView extends View {
@@ -36,6 +38,10 @@ public class VirtualKeyView extends View {
     private boolean isPressed = false;
     public boolean isSelected = false;
     private boolean hapticFeedbackEnabled = true;
+    private float pressAlphaProgress = 0f;
+    private boolean wasHoldOutsidePressed = false;
+    private ValueAnimator releaseAnimator = null;
+    private final int pressedAccentColor;
 
     /**
      * Kept for API compatibility. Haptics use a predefined click effect whose duration is
@@ -66,6 +72,7 @@ public class VirtualKeyView extends View {
 
     // Joystick / Controller states
     private float knobX = 0f;
+    private int joystickPointerId = -1;
     private float knobY = 0f;
     private boolean isJoystickActive = false;
     private boolean upActive = false;
@@ -161,6 +168,9 @@ public class VirtualKeyView extends View {
 
     private final RectF bounds = new RectF();
     private final Rect textBounds = new Rect();
+    private String lastMeasuredLabel = null;
+    private float lastMeasuredW = -1f;
+    private float lastMeasuredH = -1f;
 
     // Default colors
     private static final int COLOR_NORMAL_BASE = 0x181A1B;
@@ -174,29 +184,30 @@ public class VirtualKeyView extends View {
     private static final int COLOR_HOLD_OUTSIDE_ICON = 0xFFA08E38;
     private static final int COLOR_HOLD_OUTSIDE_PRESSED_BG = 0xD9948232;
 
-    private static final float MAX_FONT_SIZE_SP = 22f;
+    private static final float MAX_FONT_SIZE_SP = 14f;
 
     public VirtualKeyView(Context context, VirtualKey key, KeyActionListener listener) {
         super(context);
         this.key = key;
         this.listener = listener;
+        this.pressedAccentColor = VkThemeColors.withAlpha(VkThemeColors.getAccentColor(context), 0xD0);
 
         setFocusable(false);
         setClickable(true);
 
         bgPaint.setStyle(Paint.Style.FILL);
 
-        // Thin 1px/1dp border
+        // Thin 1px subtle border
         strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setStrokeWidth(dpToPx(1f));
+        strokePaint.setStrokeWidth(1f);
 
         selectPaint.setStyle(Paint.Style.STROKE);
         selectPaint.setStrokeWidth(3f); // 3px border
-        selectPaint.setColor(COLOR_SELECTED_STROKE);
+        selectPaint.setColor(VkThemeColors.getAccentColor(context));
         selectPaint.setPathEffect(new DashPathEffect(new float[]{10f, 6f}, 0));
 
         textPaint.setColor(0xFFFFFFFF);
-        textPaint.setTypeface(BOLD_TYPEFACE);
+        textPaint.setTypeface(Typeface.SANS_SERIF);
         textPaint.setTextAlign(Paint.Align.CENTER);
 
         iconStrokePaint.setStyle(Paint.Style.STROKE);
@@ -230,9 +241,9 @@ public class VirtualKeyView extends View {
         linePaint.setColor(0x28FFFFFF);
         linePaint.setStrokeWidth(dpToPx(1.5f));
 
-        blockLabelPaint.setColor(0xAA00E5FF);
+        blockLabelPaint.setColor(VkThemeColors.withAlpha(VkThemeColors.getAccentColor(context), 0xCC));
         blockLabelPaint.setTextSize(dpToPx(11f));
-        blockLabelPaint.setTypeface(BOLD_TYPEFACE);
+        blockLabelPaint.setTypeface(Typeface.SANS_SERIF);
         blockLabelPaint.setTextAlign(Paint.Align.CENTER);
     }
 
@@ -261,9 +272,15 @@ public class VirtualKeyView extends View {
         return localX >= (getWidth() - touchThreshold) && localY >= (getHeight() - touchThreshold);
     }
 
+    private int activeTouchPointerId = -1;
     private final int[] tempLoc = new int[2];
-    public final java.util.Set<Integer> activeSlidePointers = new java.util.HashSet<>();
-    private final java.util.Set<Integer> pointerDownInside = new java.util.HashSet<>();
+    public final java.util.Set<Long> activeSlidePointers = new java.util.HashSet<>();
+    private final java.util.Set<Long> pointerDownInside = new java.util.HashSet<>();
+
+    public static long makePointerKey(View sourceView, int pointerId) {
+        int sourceHash = sourceView != null ? System.identityHashCode(sourceView) : 0;
+        return (((long) sourceHash) << 32) | (pointerId & 0xFFFFFFFFL);
+    }
 
     public boolean containsScreenPoint(float screenX, float screenY) {
         if (getVisibility() != View.VISIBLE) return false;
@@ -282,42 +299,105 @@ public class VirtualKeyView extends View {
     }
 
     /** Remembers that a pointer physically landed on this key (used for pass-through keys). */
-    public void markPointerDownInside(int pointerId) {
-        pointerDownInside.add(pointerId);
+    public void markPointerDownInside(long pointerKey) {
+        pointerDownInside.add(pointerKey);
     }
 
-    public boolean isPointerDownInside(int pointerId) {
-        return pointerDownInside.contains(pointerId);
+    public boolean isPointerDownInside(long pointerKey) {
+        return pointerDownInside.contains(pointerKey);
     }
 
-    public void clearPointerDownInside(int pointerId) {
-        pointerDownInside.remove(pointerId);
+    public void clearPointerDownInside(long pointerKey) {
+        pointerDownInside.remove(pointerKey);
     }
 
-    public void onSlidePointerEnter(int pointerId) {
+    private void setPressedState(boolean pressed) {
+        this.isPressed = pressed;
+        if (pressed) {
+            if (releaseAnimator != null) {
+                releaseAnimator.cancel();
+                releaseAnimator = null;
+            }
+            wasHoldOutsidePressed = key.holdOutside;
+            pressAlphaProgress = 1f;
+            invalidate();
+        } else {
+            if (releaseAnimator != null) {
+                releaseAnimator.cancel();
+            }
+            if (pressAlphaProgress <= 0f) {
+                invalidate();
+                return;
+            }
+            releaseAnimator = ValueAnimator.ofFloat(pressAlphaProgress, 0f);
+            releaseAnimator.setDuration(400L);
+            releaseAnimator.setInterpolator(new DecelerateInterpolator());
+            releaseAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    pressAlphaProgress = (float) animation.getAnimatedValue();
+                    invalidate();
+                }
+            });
+            releaseAnimator.start();
+        }
+    }
+
+    private static int blendColors(int normalColor, int pressedColor, float ratio) {
+        float inv = 1f - ratio;
+        int a = Math.round(Color.alpha(normalColor) * inv + Color.alpha(pressedColor) * ratio);
+        int r = Math.round(Color.red(normalColor) * inv + Color.red(pressedColor) * ratio);
+        int g = Math.round(Color.green(normalColor) * inv + Color.green(pressedColor) * ratio);
+        int b = Math.round(Color.blue(normalColor) * inv + Color.blue(pressedColor) * ratio);
+        return Color.argb(a, r, g, b);
+    }
+
+    public void onSlidePointerEnter(long pointerKey) {
         // Pass-through keys are only pressed when the finger originally landed on them.
         if (!key.isSlide && key.absorbTouch) return;
-        activeSlidePointers.add(pointerId);
+        activeSlidePointers.add(pointerKey);
 
         if (!isPressed) {
-            isPressed = true;
+            setPressedState(true);
             triggerVibration();
             if (listener != null) {
                 listener.onKeyDown(key);
             }
-            invalidate();
         }
     }
 
-    public void onSlidePointerExit(int pointerId) {
-        activeSlidePointers.remove(pointerId);
+    public void onSlidePointerExit(long pointerKey, boolean forceRelease) {
+        if (forceRelease || !key.holdOutside) {
+            activeSlidePointers.remove(pointerKey);
+            pointerDownInside.remove(pointerKey);
+            if (activeSlidePointers.isEmpty() && isPressed) {
+                setPressedState(false);
+                if (listener != null) {
+                    listener.onKeyUp(key);
+                }
+            }
+        }
+    }
 
-        if (!key.holdOutside && activeSlidePointers.isEmpty() && isPressed) {
-            isPressed = false;
+    public void clearSlidePointersForSource(View sourceView) {
+        int sourceHash = sourceView != null ? System.identityHashCode(sourceView) : 0;
+        java.util.Iterator<Long> it = activeSlidePointers.iterator();
+        while (it.hasNext()) {
+            if ((int) (it.next() >>> 32) == sourceHash) {
+                it.remove();
+            }
+        }
+        java.util.Iterator<Long> downIt = pointerDownInside.iterator();
+        while (downIt.hasNext()) {
+            if ((int) (downIt.next() >>> 32) == sourceHash) {
+                downIt.remove();
+            }
+        }
+        if (activeSlidePointers.isEmpty() && isPressed) {
+            setPressedState(false);
             if (listener != null) {
                 listener.onKeyUp(key);
             }
-            invalidate();
         }
     }
 
@@ -325,11 +405,10 @@ public class VirtualKeyView extends View {
         activeSlidePointers.clear();
         pointerDownInside.clear();
         if (isPressed) {
-            isPressed = false;
+            setPressedState(false);
             if (listener != null) {
                 listener.onKeyUp(key);
             }
-            invalidate();
         }
     }
 
@@ -344,17 +423,36 @@ public class VirtualKeyView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        float pad = strokePaint.getStrokeWidth();
+        float pad = Math.max(1f, dpToPx(0.5f));
         bounds.set(pad, pad, w - pad, h - pad);
+        updateTextSizeIfNeeded(key.label);
+    }
 
-        // Auto font size with capped maximum
-        float autoSize = Math.min(w * 0.38f, h * 0.45f);
-        if (key.label.length() > 3) {
-            autoSize = Math.min(w * 0.22f, h * 0.32f);
+    private void updateTextSizeIfNeeded(String label) {
+        if (label == null) label = "";
+        float w = bounds.width();
+        float h = bounds.height();
+        if (w <= 0f || h <= 0f) return;
+        if (label.equals(lastMeasuredLabel) && w == lastMeasuredW && h == lastMeasuredH) {
+            return;
         }
+        lastMeasuredLabel = label;
+        lastMeasuredW = w;
+        lastMeasuredH = h;
+
         float maxPx = spToPx(MAX_FONT_SIZE_SP);
-        float finalSize = Math.min(maxPx, Math.max(12f, autoSize));
-        textPaint.setTextSize(finalSize);
+        float targetSize = Math.min(maxPx, Math.min(w * 0.34f, h * 0.38f));
+        targetSize = Math.max(dpToPx(7f), targetSize);
+        textPaint.setTextSize(targetSize);
+
+        if (!label.isEmpty()) {
+            float maxTextW = Math.max(1f, w - dpToPx(10f));
+            float measuredW = textPaint.measureText(label);
+            if (measuredW > maxTextW) {
+                float scaled = targetSize * (maxTextW / measuredW);
+                textPaint.setTextSize(Math.max(dpToPx(7f), scaled));
+            }
+        }
     }
 
     @Override
@@ -371,10 +469,8 @@ public class VirtualKeyView extends View {
             return;
         }
 
-        float cornerRadiusPx = dpToPx(key.cornerRadius);
-        if (cornerRadiusPx > Math.min(bounds.width(), bounds.height()) / 2f) {
-            cornerRadiusPx = Math.min(bounds.width(), bounds.height()) / 2f;
-        }
+        float minDim = Math.min(bounds.width(), bounds.height());
+        float cornerRadiusPx = (Math.max(0f, Math.min(100f, key.cornerRadius)) / 100f) * (minDim / 2f);
 
         // Block Touch rendering
         if (key.isBlockTouch) {
@@ -384,48 +480,44 @@ public class VirtualKeyView extends View {
                 canvas.drawRoundRect(bounds, cornerRadiusPx, cornerRadiusPx, bgPaint);
             }
 
-            if (key.showBorder) {
-                canvas.drawRoundRect(bounds, cornerRadiusPx, cornerRadiusPx, strokePaint);
-            }
-
             if (isSelected) {
                 canvas.drawRoundRect(bounds, cornerRadiusPx, cornerRadiusPx, selectPaint);
-                drawResizeHandle(canvas);
+                drawResizeHandle(canvas, cornerRadiusPx);
                 canvas.drawText("[Block]", bounds.centerX(), bounds.centerY() + dpToPx(4f), blockLabelPaint);
             }
             return;
         }
 
-        // Background color & alpha
-        if (isPressed) {
-            if (key.holdOutside) {
-                bgPaint.setColor(COLOR_HOLD_OUTSIDE_PRESSED_BG);
-                strokePaint.setColor(COLOR_ACTIVE_STROKE);
-            } else {
-                bgPaint.setColor(COLOR_PRESSED_BG);
-                strokePaint.setColor(COLOR_ACTIVE_STROKE);
-            }
+        // Background color & alpha (0ms press, 400ms release transition)
+        int normalAlpha = Math.round((key.bgOpacity / 100f) * 255);
+        int normalBgColor = Color.argb(normalAlpha, Color.red(COLOR_NORMAL_BASE), Color.green(COLOR_NORMAL_BASE), Color.blue(COLOR_NORMAL_BASE));
+        if (pressAlphaProgress > 0f) {
+            int targetPressedColor = wasHoldOutsidePressed ? COLOR_HOLD_OUTSIDE_PRESSED_BG : pressedAccentColor;
+            bgPaint.setColor(blendColors(normalBgColor, targetPressedColor, pressAlphaProgress));
         } else {
-            int alpha = Math.round((key.bgOpacity / 100f) * 255);
-            bgPaint.setColor(Color.argb(alpha, Color.red(COLOR_NORMAL_BASE), Color.green(COLOR_NORMAL_BASE), Color.blue(COLOR_NORMAL_BASE)));
-            strokePaint.setColor(COLOR_NORMAL_STROKE);
+            bgPaint.setColor(normalBgColor);
         }
 
         canvas.drawRoundRect(bounds, cornerRadiusPx, cornerRadiusPx, bgPaint);
 
-        // Thin 1px border
-        if (key.showBorder || isPressed) {
+        // Subtle 1px light border so buttons remain visible over dark/black stream areas
+        if (!isSelected) {
+            int borderColor = pressAlphaProgress > 0f
+                    ? blendColors(0x28FFFFFF, 0x66FFFFFF, pressAlphaProgress)
+                    : 0x28FFFFFF;
+            strokePaint.setColor(borderColor);
             canvas.drawRoundRect(bounds, cornerRadiusPx, cornerRadiusPx, strokePaint);
         }
 
         // Selection highlight in editor
         if (isSelected) {
             canvas.drawRoundRect(bounds, cornerRadiusPx, cornerRadiusPx, selectPaint);
-            drawResizeHandle(canvas);
+            drawResizeHandle(canvas, cornerRadiusPx);
         }
 
         // Label text with custom text opacity
         String label = key.label;
+        updateTextSizeIfNeeded(label);
         int textAlpha = Math.round((key.textOpacity / 100f) * 255);
         textPaint.setColor(Color.argb(textAlpha, 255, 255, 255));
         textPaint.getTextBounds(label, 0, label.length(), textBounds);
@@ -433,9 +525,11 @@ public class VirtualKeyView extends View {
         float y = bounds.centerY() + (textBounds.height() / 2f) - textBounds.bottom;
         canvas.drawText(label, x, y, textPaint);
 
-        // Slide key indicator: top-left up-chevron (Cyan #3898EC, turns white on press)
+        // Slide key indicator: top-left up-chevron (Cyan #3898EC, turns white on press with 400ms release fade)
         if (key.isSlide) {
-            iconStrokePaint.setColor(isPressed ? 0xFFFFFFFF : COLOR_SLIDE_ICON);
+            iconStrokePaint.setColor(pressAlphaProgress > 0f
+                    ? blendColors(COLOR_SLIDE_ICON, 0xFFFFFFFF, pressAlphaProgress)
+                    : COLOR_SLIDE_ICON);
             float chevronW = dpToPx(10f);
             float chevronH = dpToPx(4.5f);
             float padX = dpToPx(8f);
@@ -445,9 +539,11 @@ public class VirtualKeyView extends View {
             drawUpChevron(canvas, iconStrokePaint, cx, cy, chevronW, chevronH);
         }
 
-        // Hold on Slide Out indicator: bottom-left down-double-chevron (Olive/Mustard #A08E38, turns white on press)
+        // Hold on Slide Out indicator: bottom-left down-double-chevron (Olive/Mustard #A08E38, turns white on press with 400ms release fade)
         if (key.holdOutside) {
-            iconStrokePaint.setColor(isPressed ? 0xFFFFFFFF : COLOR_HOLD_OUTSIDE_ICON);
+            iconStrokePaint.setColor(pressAlphaProgress > 0f
+                    ? blendColors(COLOR_HOLD_OUTSIDE_ICON, 0xFFFFFFFF, pressAlphaProgress)
+                    : COLOR_HOLD_OUTSIDE_ICON);
             float chevronW = dpToPx(9.5f);
             float chevronH = dpToPx(3.2f);
             float spacing = dpToPx(4f);
@@ -459,23 +555,30 @@ public class VirtualKeyView extends View {
         }
     }
 
-    /** Bottom-right triangluar resize grip shown while the key is selected in the editor. */
-    private void drawResizeHandle(Canvas canvas) {
-        float handleW = dpToPx(13f);
-        float handleH = dpToPx(13f);
+    /** Bottom-right inner L-shaped resize grip shown while the key is selected in the editor. */
+    private void drawResizeHandle(Canvas canvas, float cornerRadiusPx) {
+        float offset = dpToPx(3.5f);
+        float armLen = dpToPx(9f);
+        float right = bounds.right - offset;
+        float bottom = bounds.bottom - offset;
+        float innerRadius = Math.max(0f, Math.min(armLen, cornerRadiusPx - offset));
 
-        handlePaint.setColor(COLOR_SELECTED_STROKE);
+        gripPaint.setColor(VkThemeColors.getAccentColor(getContext()));
+        gripPaint.setStrokeWidth(dpToPx(1.0f));
+        gripPaint.setStrokeCap(Paint.Cap.ROUND);
+        gripPaint.setStrokeJoin(Paint.Join.ROUND);
+
         path.reset();
-        path.moveTo(bounds.right, bounds.bottom - handleH);
-        path.lineTo(bounds.right, bounds.bottom);
-        path.lineTo(bounds.right - handleW, bounds.bottom);
-        path.close();
-        canvas.drawPath(path, handlePaint);
-
-        gripPaint.setColor(0xFF141517);
-        gripPaint.setStrokeWidth(dpToPx(1.5f));
-        canvas.drawLine(bounds.right - dpToPx(8f), bounds.bottom - dpToPx(3f),
-                bounds.right - dpToPx(3f), bounds.bottom - dpToPx(8f), gripPaint);
+        path.moveTo(right - armLen, bottom);
+        if (innerRadius > 0.5f) {
+            path.lineTo(right - innerRadius, bottom);
+            tmpRect.set(right - 2f * innerRadius, bottom - 2f * innerRadius, right, bottom);
+            path.arcTo(tmpRect, 90f, -90f, false);
+        } else {
+            path.lineTo(right, bottom);
+        }
+        path.lineTo(right, bottom - armLen);
+        canvas.drawPath(path, gripPaint);
     }
 
     private void drawUpChevron(Canvas canvas, Paint paint, float cx, float cy, float w, float h) {
@@ -513,10 +616,6 @@ public class VirtualKeyView extends View {
         // release are driven by VirtualKeyboardController's shared touch dispatcher.
         if (isPassThrough()) {
             return false;
-        }
-
-        if (listener != null) {
-            listener.onKeyTouchEvent(this, event);
         }
 
         if (key.isBlockTouch) {
@@ -597,11 +696,14 @@ public class VirtualKeyView extends View {
 
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    joystickPointerId = event.getPointerId(0);
                     triggerVibration();
                     // Fallthrough to calculate coordinates
-                case MotionEvent.ACTION_MOVE:
-                    float touchX = event.getX();
-                    float touchY = event.getY();
+                case MotionEvent.ACTION_MOVE: {
+                    int pIdx = event.findPointerIndex(joystickPointerId);
+                    if (pIdx < 0) return true;
+                    float touchX = event.getX(pIdx);
+                    float touchY = event.getY(pIdx);
                     float dx = touchX - cx;
                     float dy = touchY - cy;
                     float dist = (float) Math.hypot(dx, dy);
@@ -633,9 +735,25 @@ public class VirtualKeyView extends View {
                     updateDirectionState(newUp, newDown, newLeft, newRight);
                     invalidate();
                     return true;
+                }
+
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    return true;
+
+                case MotionEvent.ACTION_POINTER_UP:
+                    if (event.getPointerId(event.getActionIndex()) == joystickPointerId) {
+                        joystickPointerId = -1;
+                        knobX = cx;
+                        knobY = cy;
+                        isJoystickActive = false;
+                        updateDirectionState(false, false, false, false);
+                        invalidate();
+                    }
+                    return true;
 
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
+                    joystickPointerId = -1;
                     knobX = cx;
                     knobY = cy;
                     isJoystickActive = false;
@@ -646,6 +764,10 @@ public class VirtualKeyView extends View {
             return true;
         }
 
+        if (listener != null) {
+            listener.onKeyTouchEvent(this, event);
+        }
+
         if (key.isSlide) {
             // Slide mode with absorbTouch consumes touch; otherwise passes through to stream
             return key.absorbTouch;
@@ -653,43 +775,54 @@ public class VirtualKeyView extends View {
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                activeTouchPointerId = event.getPointerId(0);
                 triggerVibration();
-                isPressed = true;
+                setPressedState(true);
                 if (listener != null) {
                     listener.onKeyDown(key);
                 }
-                invalidate();
                 return true;
 
-            case MotionEvent.ACTION_MOVE:
-                float x = event.getX();
-                float y = event.getY();
+            case MotionEvent.ACTION_POINTER_DOWN:
+                return true;
+
+            case MotionEvent.ACTION_MOVE: {
+                int pIdx = event.findPointerIndex(activeTouchPointerId);
+                if (pIdx < 0) return true;
+                float x = event.getX(pIdx);
+                float y = event.getY(pIdx);
                 boolean inside = x >= 0 && x <= getWidth() && y >= 0 && y <= getHeight();
                 if (!inside && isPressed) {
                     if (!key.holdOutside) {
-                        isPressed = false;
+                        setPressedState(false);
                         if (listener != null) {
                             listener.onKeyUp(key);
                         }
-                        invalidate();
                     }
-                } else if (inside && !isPressed) {
-                    isPressed = true;
-                    if (listener != null) {
-                        listener.onKeyDown(key);
+                }
+                return true;
+            }
+
+            case MotionEvent.ACTION_POINTER_UP:
+                if (event.getPointerId(event.getActionIndex()) == activeTouchPointerId) {
+                    activeTouchPointerId = -1;
+                    if (isPressed) {
+                        setPressedState(false);
+                        if (listener != null) {
+                            listener.onKeyUp(key);
+                        }
                     }
-                    invalidate();
                 }
                 return true;
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                activeTouchPointerId = -1;
                 if (isPressed) {
-                    isPressed = false;
+                    setPressedState(false);
                     if (listener != null) {
                         listener.onKeyUp(key);
                     }
-                    invalidate();
                 }
                 return true;
         }
@@ -738,7 +871,10 @@ public class VirtualKeyView extends View {
     private void drawJoystick(Canvas canvas) {
         float cx = getWidth() / 2f;
         float cy = getHeight() / 2f;
-        float radius = Math.min(cx, cy) - dpToPx(3f);
+        float radius = Math.min(cx, cy) - dpToPx(5f);
+        if (radius <= 0f) return;
+
+        int accentColor = VkThemeColors.getAccentColor(getContext());
 
         // 1. Draw circular base
         if (key.bgOpacity > 0) {
@@ -747,65 +883,90 @@ public class VirtualKeyView extends View {
             canvas.drawCircle(cx, cy, radius, bgPaint);
         }
 
-        if (key.showBorder) {
-            strokePaint.setColor(COLOR_NORMAL_STROKE);
-            strokePaint.setStrokeWidth(dpToPx(1.2f));
-            canvas.drawCircle(cx, cy, radius, strokePaint);
+        // Subtle inner guide ring
+        canvas.drawCircle(cx, cy, radius * 0.42f, guidePaint);
 
-            // Subtle crosshair / inner guide circles
-            canvas.drawCircle(cx, cy, radius * 0.45f, guidePaint);
-            canvas.drawLine(cx - radius * 0.85f, cy, cx + radius * 0.85f, cy, guidePaint);
-            canvas.drawLine(cx, cy - radius * 0.85f, cx, cy + radius * 0.85f, guidePaint);
-        }
+        // 2. Directional Indicators/Labels (respecting textOpacity)
+        int textAlpha = Math.round((key.textOpacity / 100f) * 255);
+        int normalDirColor = Color.argb(Math.round(textAlpha * 0.8f), 255, 255, 255);
+        int activeDirColor = VkThemeColors.withAlpha(accentColor, Math.max(80, textAlpha));
 
-        // 2. Directional Indicators/Labels (Up, Down, Left, Right)
         float dirTextSize = Math.max(dpToPx(9f), radius * 0.18f);
         dirPaint.setTextSize(dirTextSize);
 
-        // Up label
-        dirPaint.setColor(upActive ? COLOR_PRESSED_BG : 0xCCFFFFFF);
+        dirPaint.setColor(upActive ? activeDirColor : normalDirColor);
         canvas.drawText(getDirectionLabel(key.codeUp, "▲"), cx, cy - radius * 0.55f, dirPaint);
 
-        // Down label
-        dirPaint.setColor(downActive ? COLOR_PRESSED_BG : 0xCCFFFFFF);
+        dirPaint.setColor(downActive ? activeDirColor : normalDirColor);
         canvas.drawText(getDirectionLabel(key.codeDown, "▼"), cx, cy + radius * 0.70f, dirPaint);
 
-        // Left label
-        dirPaint.setColor(leftActive ? COLOR_PRESSED_BG : 0xCCFFFFFF);
+        dirPaint.setColor(leftActive ? activeDirColor : normalDirColor);
         canvas.drawText(getDirectionLabel(key.codeLeft, "◀"), cx - radius * 0.65f, cy + dirTextSize * 0.35f, dirPaint);
 
-        // Right label
-        dirPaint.setColor(rightActive ? COLOR_PRESSED_BG : 0xCCFFFFFF);
+        dirPaint.setColor(rightActive ? activeDirColor : normalDirColor);
         canvas.drawText(getDirectionLabel(key.codeRight, "▶"), cx + radius * 0.65f, cy + dirTextSize * 0.35f, dirPaint);
 
         // 3. Thumb Knob (moves with touch)
         float currentKnobX = isJoystickActive ? knobX : cx;
         float currentKnobY = isJoystickActive ? knobY : cy;
-        float knobRadius = radius * 0.36f;
+        float knobRadius = radius * 0.22f;
 
-        knobPaint.setColor(isJoystickActive ? COLOR_PRESSED_BG : 0xCC2B2D31);
+        knobPaint.setColor(isJoystickActive ? VkThemeColors.withAlpha(accentColor, 0x99) : 0xCC2B2D31);
         canvas.drawCircle(currentKnobX, currentKnobY, knobRadius, knobPaint);
 
         knobBorderPaint.setStrokeWidth(dpToPx(1.5f));
-        knobBorderPaint.setColor(isJoystickActive ? 0xFFFFFFFF : 0x66FFFFFF);
+        knobBorderPaint.setColor(isJoystickActive ? accentColor : 0x66FFFFFF);
         canvas.drawCircle(currentKnobX, currentKnobY, knobRadius, knobBorderPaint);
 
-        // Center dot on knob
         dotPaint.setColor(isJoystickActive ? 0xFFFFFFFF : 0x88FFFFFF);
-        canvas.drawCircle(currentKnobX, currentKnobY, dpToPx(3f), dotPaint);
+        canvas.drawCircle(currentKnobX, currentKnobY, dpToPx(2.2f), dotPaint);
 
-        // 4. If selected in Layout Editor: draw circular dashed selection ring and resize handle
+        // 4. Outer accent directional arc + filled outward triangle toward thumb direction
+        if (isJoystickActive) {
+            float dx = currentKnobX - cx;
+            float dy = currentKnobY - cy;
+            float dist = (float) Math.hypot(dx, dy);
+            if (dist > radius * 0.08f) {
+                float angleRad = (float) Math.atan2(dy, dx);
+                float angleDeg = (float) Math.toDegrees(angleRad);
+                float sweep = 72f;
+
+                iconStrokePaint.setColor(accentColor);
+                iconStrokePaint.setStrokeWidth(dpToPx(2.2f));
+                tmpRect.set(cx - radius, cy - radius, cx + radius, cy + radius);
+                canvas.drawArc(tmpRect, angleDeg - (sweep / 2f), sweep, false, iconStrokePaint);
+                iconStrokePaint.setStrokeWidth(dpToPx(1.8f));
+
+                // Filled outward triangle at the center of the arc
+                float tipDist = radius + dpToPx(5f);
+                float baseDist = radius - dpToPx(0.5f);
+                float spreadRad = 0.12f;
+                path.reset();
+                path.moveTo(
+                        cx + (float) Math.cos(angleRad - spreadRad) * baseDist,
+                        cy + (float) Math.sin(angleRad - spreadRad) * baseDist);
+                path.lineTo(
+                        cx + (float) Math.cos(angleRad) * tipDist,
+                        cy + (float) Math.sin(angleRad) * tipDist);
+                path.lineTo(
+                        cx + (float) Math.cos(angleRad + spreadRad) * baseDist,
+                        cy + (float) Math.sin(angleRad + spreadRad) * baseDist);
+                path.close();
+                dotPaint.setColor(accentColor);
+                canvas.drawPath(path, dotPaint);
+            }
+        }
+
+        // 5. If selected in Layout Editor: draw circular dashed selection ring and resize handle
         if (isSelected) {
             canvas.drawCircle(cx, cy, radius, selectPaint);
-            drawResizeHandle(canvas);
+            drawResizeHandle(canvas, 0f);
         }
     }
 
     private void drawScrollController(Canvas canvas) {
-        float cornerRadiusPx = dpToPx(key.cornerRadius);
-        if (cornerRadiusPx > Math.min(bounds.width(), bounds.height()) / 2f) {
-            cornerRadiusPx = Math.min(bounds.width(), bounds.height()) / 2f;
-        }
+        float minDim = Math.min(bounds.width(), bounds.height());
+        float cornerRadiusPx = (Math.max(0f, Math.min(100f, key.cornerRadius)) / 100f) * (minDim / 2f);
 
         // 1. Base track background
         if (key.bgOpacity > 0) {
@@ -880,7 +1041,7 @@ public class VirtualKeyView extends View {
         // 5. If selected in Layout Editor: draw selection outline and resize handle
         if (isSelected) {
             canvas.drawRoundRect(bounds, cornerRadiusPx, cornerRadiusPx, selectPaint);
-            drawResizeHandle(canvas);
+            drawResizeHandle(canvas, cornerRadiusPx);
         }
     }
 

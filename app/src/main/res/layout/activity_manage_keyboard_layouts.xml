@@ -3,73 +3,87 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121316">
+    android:background="#0D1015">
 
     <!-- Top Action Bar -->
     <LinearLayout
         android:id="@+id/top_bar_container"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="#1A1C22"
+        android:layout_height="52dp"
+        android:background="#111419"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="8dp"
         android:paddingEnd="12dp">
 
-        <ImageButton
+        <ImageView
             android:id="@+id/btn_back"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_arrow_back"
-            android:contentDescription="@string/vk_back" />
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="7dp"
+            android:background="@drawable/vk_btn_secondary"
+            android:src="@drawable/ic_vk_chevron_left"
+            android:contentDescription="@string/vk_back"
+            android:clickable="true" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="10dp"
             android:layout_marginEnd="8dp"
             android:singleLine="true"
-            android:text="@string/vk_layouts_title"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:text="Layout Packs"
+            android:textColor="#E6EDF3"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
-        <!-- Import Button -->
-        <Button
+        <TextView
+            android:id="@+id/btn_top_help"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/vk_btn_secondary"
+            android:gravity="center"
+            android:clickable="true"
+            android:text="?"
+            android:textColor="#E6EDF3"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
             android:id="@+id/btn_top_import"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:backgroundTint="#262A33"
+            android:layout_height="32dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/vk_btn_secondary"
+            android:gravity="center"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
+            android:clickable="true"
             android:text="@string/vk_import"
-            android:textAllCaps="false"
-            android:textColor="#00B4D8"
-            android:textSize="12sp"
-            android:layout_marginEnd="8dp" />
+            android:textColor="#E6EDF3"
+            android:textSize="11sp" />
 
-        <!-- New Layout Button -->
-        <Button
+        <TextView
             android:id="@+id/btn_top_new_layout"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:backgroundTint="#0077B6"
+            android:layout_height="32dp"
+            android:background="@drawable/vk_btn_primary"
+            android:gravity="center"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
+            android:clickable="true"
             android:text="@string/vk_new"
-            android:textAllCaps="false"
             android:textColor="#FFFFFF"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Divider -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#20FFFFFF" />
+        android:background="#21262D" />
 
     <!-- Empty State -->
     <TextView
@@ -78,18 +92,18 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="32dp"
-        android:text="@string/vk_no_layouts"
-        android:textColor="#757575"
-        android:textSize="14sp"
+        android:text="No layout packs yet. Tap + New to create one."
+        android:textColor="#6E7681"
+        android:textSize="13sp"
         android:visibility="gone" />
 
-    <!-- List View with Gaps between Cards -->
+    <!-- List View -->
     <ListView
         android:id="@+id/list_keyboard_layouts"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:divider="@android:color/transparent"
-        android:dividerHeight="12dp"
+        android:dividerHeight="10dp"
         android:padding="12dp"
         android:clipToPadding="false" />
 

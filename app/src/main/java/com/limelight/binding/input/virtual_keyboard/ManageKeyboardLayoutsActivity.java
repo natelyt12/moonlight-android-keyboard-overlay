@@ -7,12 +7,13 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,9 +21,8 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
@@ -51,7 +51,7 @@ public class ManageKeyboardLayoutsActivity extends Activity {
     private static final int REQUEST_EDIT_LAYOUT = 2003;
 
     // Matches the toolbar background so the status bar blends into the header
-    private static final int TOP_BAR_COLOR = 0xFF1A1C22;
+    private static final int TOP_BAR_COLOR = 0xFF111419;
 
     private ListView listView;
     private TextView emptyState;
@@ -95,10 +95,24 @@ public class ManageKeyboardLayoutsActivity extends Activity {
             }
         });
 
+        findViewById(R.id.btn_top_new_layout).setBackground(VkThemeColors.createPrimaryButtonDrawable(this));
         findViewById(R.id.btn_top_new_layout).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showCreateLayoutDialog();
+            }
+        });
+
+        findViewById(R.id.btn_top_help).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/natelyt12/moonlight-android-keyboard-controller/blob/master/docs/LAYOUT_PACKS.md"));
+                    startActivity(browserIntent);
+                } catch (Exception e) {
+                    Toast.makeText(ManageKeyboardLayoutsActivity.this, "Cannot open docs link", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -491,35 +505,63 @@ public class ManageKeyboardLayoutsActivity extends Activity {
 
             final VirtualKeyboardProfileManager.LayoutProfileInfo profile = getItem(position);
             final boolean isActive = (activeProfileId != null && profile.id.equals(activeProfileId));
+            final int accentColor = VkThemeColors.getAccentColor(ManageKeyboardLayoutsActivity.this);
+            final float density = getResources().getDisplayMetrics().density;
 
             View cardRoot = convertView.findViewById(R.id.card_layout_root);
             if (cardRoot != null) {
-                cardRoot.setBackgroundResource(isActive ? R.drawable.bg_layout_card_active : R.drawable.bg_layout_card);
+                GradientDrawable cardBg = new GradientDrawable();
+                cardBg.setCornerRadius(8f * density);
+                if (isActive) {
+                    cardBg.setColor(0xFF141920);
+                    cardBg.setStroke(Math.max(2, Math.round(1.5f * density)), accentColor);
+                } else {
+                    cardBg.setColor(0xFF14181E);
+                    cardBg.setStroke(Math.max(1, Math.round(1f * density)), 0xFF232933);
+                }
+                cardRoot.setBackground(cardBg);
             }
 
             TextView txtName = convertView.findViewById(R.id.item_layout_name);
             TextView txtInfo = convertView.findViewById(R.id.item_layout_info);
             TextView badgeActive = convertView.findViewById(R.id.badge_active);
 
-            Button btnSetActive = convertView.findViewById(R.id.btn_item_set_active);
-            Button btnEdit = convertView.findViewById(R.id.btn_item_edit);
-            ImageButton btnMore = convertView.findViewById(R.id.btn_item_more);
+            TextView btnSetActive = convertView.findViewById(R.id.btn_item_set_active);
+            TextView btnEdit = convertView.findViewById(R.id.btn_item_edit);
+            ImageView btnMore = convertView.findViewById(R.id.btn_item_more);
 
             txtName.setText(profile.name);
-            badgeActive.setVisibility(isActive ? View.VISIBLE : View.GONE);
+            if (isActive) {
+                badgeActive.setVisibility(View.VISIBLE);
+                GradientDrawable badgeBg = new GradientDrawable();
+                badgeBg.setCornerRadius(4f * density);
+                badgeBg.setColor(VkThemeColors.withAlpha(accentColor, 0x26));
+                badgeActive.setBackground(badgeBg);
+                badgeActive.setTextColor(accentColor);
+            } else {
+                badgeActive.setVisibility(View.GONE);
+            }
 
+            VirtualKeyboardProfileManager.LayoutPackData pack =
+                    VirtualKeyboardProfileManager.loadPack(ManageKeyboardLayoutsActivity.this, profile.id);
+            int subCount = pack != null ? pack.subLayouts.size() : 0;
             String dateStr = DateFormat.format("yyyy-MM-dd HH:mm", new Date(profile.lastModified)).toString();
-            txtInfo.setText(getString(R.string.vk_profile_info_format, profile.keyCount, dateStr));
+            txtInfo.setText(subCount + (subCount == 1 ? " layout" : " layouts")
+                    + " • " + profile.keyCount + (profile.keyCount == 1 ? " key" : " keys")
+                    + " • Modified " + dateStr);
 
             if (isActive) {
                 btnSetActive.setText(R.string.vk_active);
                 btnSetActive.setEnabled(false);
-                btnSetActive.setBackgroundTintList(ColorStateList.valueOf(0xFF143A4D));
-                btnSetActive.setTextColor(0xFF00B4D8);
+                GradientDrawable activePill = new GradientDrawable();
+                activePill.setCornerRadius(6f * density);
+                activePill.setColor(VkThemeColors.withAlpha(accentColor, 0x22));
+                btnSetActive.setBackground(activePill);
+                btnSetActive.setTextColor(accentColor);
             } else {
                 btnSetActive.setText(R.string.vk_set_active);
                 btnSetActive.setEnabled(true);
-                btnSetActive.setBackgroundTintList(ColorStateList.valueOf(0xFF0077B6));
+                btnSetActive.setBackground(VkThemeColors.createPrimaryButtonDrawable(ManageKeyboardLayoutsActivity.this));
                 btnSetActive.setTextColor(0xFFFFFFFF);
             }
 
